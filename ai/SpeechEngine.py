@@ -2,6 +2,8 @@
 
 import pyttsx
 
+# TODO: when internet is good, pipe message to betterEngine.sh
+
 class SpeechEngine :
     def __init__(self) :
         self.rate = 150
