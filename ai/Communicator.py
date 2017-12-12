@@ -1,36 +1,92 @@
 #! /usr/bin/env python
 
-import apiai
+import dialogflow
 
-CLIENT_ACCESS_TOKEN = 'c76a23378b774572aaf5d3cd4af5b0cb' 
-SESSION_ID = 'dustbin_sesh'
+from SpeechEngine import SpeechEngine
+
+_SESSION_ID = 'dev_sesh'
+_PROJECT_ID = 'dust-bin-97d2d'
+_LANGUAGE_CODE = 'en-US'
 
 class Communicator :
-    def __init__(self, AI) :
-        self.ai = AI
+    def __init__(self) :
+        self.speaker = SpeechEngine()
+    
+    def detect_intent_texts(self, text, callback=None):
+        """Returns the result of detect intent with texts as inputs.
 
-    def sendText(self, text) :
-        request = self.ai.text_request()
-        request.lang = 'en'
-        request.session_id = SESSION_ID
-        request.query = text
-        response = request.getresponse()
-        print (response.read())
+        Using the same `session_id` between requests allows continuation
+        of the conversaion."""
+        session_client = dialogflow.SessionsClient()
 
-    def sendEvent(self, event) :
-        request = self.ai.event_request(event)
-        request.lang = 'en'  # optional, default value equal 'en'
-        request.session_id = SESSION_ID
-        response = request.getresponse()
-        print(response.read())
+        session = session_client.session_path(_PROJECT_ID, _SESSION_ID)
+        print('Session path: {}\n'.format(session))
+
+        text_input = dialogflow.types.TextInput(
+            text=text, language_code=_LANGUAGE_CODE)
+
+        query_input = dialogflow.types.QueryInput(text=text_input)
+
+        response = session_client.detect_intent(
+            session=session, query_input=query_input)
+
+        print('=' * 20)
+        print('Query text: {}'.format(response.query_result.query_text))
+        print('Detected intent: {} (confidence: {})\n'.format(
+            response.query_result.intent.display_name,
+            response.query_result.intent_detection_confidence))
+        print('Fulfillment text: {}\n'.format(
+            response.query_result.fulfillment_text))
+        self.speaker.say(response.query_result.fulfillment_text, callback)
+        return response
+
+    def detect_intent_audio(self, audio_file_path, callback=None):
+        """Returns the result of detect intent with an audio file as input.
+        Using the same `session_id` between requests allows continuation
+        of the conversation."""
+        session_client = dialogflow.SessionsClient()
+
+        # Note: hard coding audio_encoding and sample_rate_hertz for simplicity.
+        audio_encoding = dialogflow.enums.AudioEncoding.AUDIO_ENCODING_LINEAR_16
+        sample_rate_hertz = 16000
+
+        session = session_client.session_path(_PROJECT_ID, _SESSION_ID)
+        print('Session path: {}\n'.format(session))
+
+        with open(audio_file_path, 'rb') as audio_file:
+            input_audio = audio_file.read()
+
+        audio_config = dialogflow.types.InputAudioConfig(
+            audio_encoding=audio_encoding, language_code=_LANGUAGE_CODE,
+            sample_rate_hertz=sample_rate_hertz)
+        query_input = dialogflow.types.QueryInput(audio_config=audio_config)
+
+        response = session_client.detect_intent(
+            session=session, query_input=query_input,
+            input_audio=input_audio)
+
+        print('=' * 20)
+        print('Query text: {}'.format(response.query_result.query_text))
+        print('Detected intent: {} (confidence: {})\n'.format(
+            response.query_result.intent.display_name,
+            response.query_result.intent_detection_confidence))
+        print('Fulfillment text: {}\n'.format(
+        response.query_result.fulfillment_text))
+        self.speaker.say(response.query_result.fulfillment_text, callback)
+        return response
+
+def doSomething() :
+    print('Called back!')
 
 def main():
-    ai = apiai.ApiAI(CLIENT_ACCESS_TOKEN)
-    com = Communicator(ai)
-    com.sendText('Who are you?')
-    event = apiai.events.Event("my_custom_event")
-    com.sendEvent(event)
+    com = Communicator()
+    #com.sendText('Who are you?')
+    #event = apiai.events.Event("my_custom_event")
+    #com.sendEvent(event)
+    com.detect_intent_texts('hi', doSomething)
 
 if __name__ == '__main__':
     main()
+else:
+    Communicator
 
