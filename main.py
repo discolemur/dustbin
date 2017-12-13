@@ -1,13 +1,10 @@
 #! /usr/bin/env python
 
-from ai.Communicator import Communicator
-from robot.move import Move
+from Driver import Driver
 
 def main() :
-    com = Communicator()
-    move = Move()
-    response = com.detect_intent_texts('hi')
-    move.move(response.query_result.action)
+    driver = Driver()
+    driver.run()
 
 if __name__ == '__main__':
     main()

@@ -1,25 +1,26 @@
 #! /usr/bin/env python
 
 import pyttsx
-
-# TODO: when internet is good, pipe message to betterEngine.sh
+from time import time
+import os
 
 class SpeechEngine :
-    def __init__(self) :
+    def __init__(self, driver) :
         self.rate = 150
         #     Geordie (bad)
 #        self.voice = 'english-north'
         #     US male (ok)
 #        self.voice = 'english-us'
         #     British female (ok)
-        self.voice= 'english+f2'
+        self.voice = 'english+f2'
         self.volume = 0.5
+        self.DRIVER = driver
     def onEnd(self, callback) :
         def finished(name, completed) :
             if callback is not None :
                 callback()
         return finished
-    def say(self, message, callback=None) :
+    def sayUgly(self, message, callback=None) :
         engine = pyttsx.init()
         engine.setProperty('rate',self.rate)
         engine.setProperty('voice', self.voice)
@@ -27,6 +28,18 @@ class SpeechEngine :
         engine.connect('finished-utterance', self.onEnd(callback))
         engine.say(message)
         engine.runAndWait()
+    def sayPretty(self, message, callback=None) :
+        # Make sure we escape all single-quote chars
+        message = message.replace('\'', '\'\\\'\'')
+        print(message)
+        os.system('echo \'%s\' | ai/betterEngine.sh' %message)
+        if callback is not None :
+            callback()
+    def say(self, message, callback=None) :
+        if self.DRIVER is not None and self.DRIVER.hasInternet() :
+            self.sayPretty(message, callback)
+        else :
+            self.sayUgly(message, callback)
     def setProperty(self, property, value) :
         if property == 'rate' :
             self.rate = value
@@ -48,7 +61,7 @@ def doSomething() :
     print('Called back!')
 
 def main() :
-    engine = SpeechEngine()
+    engine = SpeechEngine(None)
     engine.say('This is what the engine sounds like by default.', doSomething)
     engine.say('Import this class, make an engine object, and use the \'say\' method to say stuff.', doSomething)
 

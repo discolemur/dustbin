@@ -3,14 +3,23 @@
 import dialogflow
 
 from SpeechEngine import SpeechEngine
+from Listener import Listener
 
 _SESSION_ID = 'dev_sesh'
 _PROJECT_ID = 'dust-bin-97d2d'
 _LANGUAGE_CODE = 'en-US'
 
+"""
+If mplayer is throwing stupid errors, do this:
+Add the following to your $HOME/.mplayer/config file:
+  lirc=no
+"""
+
 class Communicator :
-    def __init__(self) :
-        self.speaker = SpeechEngine()
+    def __init__(self, driver) :
+        self.speaker = SpeechEngine(driver)
+        self.listener = Listener(driver)
+        self.DRIVER = driver
     
     def detect_intent_texts(self, text, callback=None):
         """Returns the result of detect intent with texts as inputs.
@@ -75,15 +84,22 @@ class Communicator :
         self.speaker.say(response.query_result.fulfillment_text, callback)
         return response
 
+    def listen(self, seconds, callback=None) :
+        filename = self.listener.record(seconds)
+        self.detect_intent_audio(filename, callback)
+
+
 def doSomething() :
     print('Called back!')
 
 def main():
-    com = Communicator()
+    com = Communicator(None)
     #com.sendText('Who are you?')
     #event = apiai.events.Event("my_custom_event")
     #com.sendEvent(event)
-    com.detect_intent_texts('hi', doSomething)
+    #com.detect_intent_texts('hi', doSomething)
+    com.detect_intent_audio('spoken.wav', doSomething)
+    com.listen(10, doSomething)
 
 if __name__ == '__main__':
     main()
