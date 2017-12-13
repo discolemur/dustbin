@@ -5,11 +5,11 @@ This is just a bogus class: a placeholder for future robot com classes.
 """
 
 class Move :
-    def __init__(self, driver) :
+    def __init__(self, dustbin) :
         self.stuff = 'magic'
-        self.DRIVER = driver
+        self.DUSTBIN = dustbin
     def move(self, position) :
-        print 'Going to position', position
+        self.DUSTBIN.log('Going to position %s' %position)
 
 def main() :
     move = Move(None)

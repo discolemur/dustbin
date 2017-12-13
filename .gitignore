@@ -1,2 +1,5 @@
 .vscode
 *.pyc
+*/*.pyc
+last_recorded_message.wav
+log*

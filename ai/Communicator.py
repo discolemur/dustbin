@@ -15,13 +15,22 @@ Add the following to your $HOME/.mplayer/config file:
   lirc=no
 """
 
+"""
+If shows error
+ALSA lib . . . Unknown PCM cards.pcm.{cardname}
+
+Then for each error {cardname} change the following line in /usr/share/alsa/alsa.conf
+ORIGINAL:    pcm.{cardname} cards.pcm.{cardname}
+NEW:         pcm.{cardname} cards.pcm.default
+"""
+
 class Communicator :
-    def __init__(self, driver) :
-        self.speaker = SpeechEngine(driver)
-        self.listener = Listener(driver)
-        self.DRIVER = driver
+    def __init__(self, audio_timeout, dustbin) :
+        self.speaker = SpeechEngine(dustbin)
+        self.listener = Listener(audio_timeout, dustbin)
+        self.DUSTBIN = dustbin
     
-    def detect_intent_texts(self, text, callback=None):
+    def _detect_intent_text(self, text):
         """Returns the result of detect intent with texts as inputs.
 
         Using the same `session_id` between requests allows continuation
@@ -29,7 +38,7 @@ class Communicator :
         session_client = dialogflow.SessionsClient()
 
         session = session_client.session_path(_PROJECT_ID, _SESSION_ID)
-        print('Session path: {}\n'.format(session))
+        self.DUSTBIN.log('Session path: {}\n'.format(session))
 
         text_input = dialogflow.types.TextInput(
             text=text, language_code=_LANGUAGE_CODE)
@@ -39,17 +48,17 @@ class Communicator :
         response = session_client.detect_intent(
             session=session, query_input=query_input)
 
-        print('=' * 20)
-        print('Query text: {}'.format(response.query_result.query_text))
-        print('Detected intent: {} (confidence: {})\n'.format(
+        self.DUSTBIN.log('=' * 20)
+        self.DUSTBIN.log('Query text: {}'.format(response.query_result.query_text))
+        self.DUSTBIN.log('Detected intent: {} (confidence: {})\n'.format(
             response.query_result.intent.display_name,
             response.query_result.intent_detection_confidence))
-        print('Fulfillment text: {}\n'.format(
+        self.DUSTBIN.log('Fulfillment text: {}\n'.format(
             response.query_result.fulfillment_text))
-        self.speaker.say(response.query_result.fulfillment_text, callback)
+        self.speaker.say(response.query_result.fulfillment_text)
         return response
 
-    def detect_intent_audio(self, audio_file_path, callback=None):
+    def _detect_intent_audio(self, audio_file_path):
         """Returns the result of detect intent with an audio file as input.
         Using the same `session_id` between requests allows continuation
         of the conversation."""
@@ -57,10 +66,11 @@ class Communicator :
 
         # Note: hard coding audio_encoding and sample_rate_hertz for simplicity.
         audio_encoding = dialogflow.enums.AudioEncoding.AUDIO_ENCODING_LINEAR_16
-        sample_rate_hertz = 16000
+        #sample_rate_hertz = 16000
+        sample_rate_hertz = self.listener.RATE
 
         session = session_client.session_path(_PROJECT_ID, _SESSION_ID)
-        print('Session path: {}\n'.format(session))
+        self.DUSTBIN.log('Session path: {}\n'.format(session))
 
         with open(audio_file_path, 'rb') as audio_file:
             input_audio = audio_file.read()
@@ -74,32 +84,32 @@ class Communicator :
             session=session, query_input=query_input,
             input_audio=input_audio)
 
-        print('=' * 20)
-        print('Query text: {}'.format(response.query_result.query_text))
-        print('Detected intent: {} (confidence: {})\n'.format(
+        self.DUSTBIN.log('=' * 20)
+        self.DUSTBIN.log('Query text: {}'.format(response.query_result.query_text))
+        self.DUSTBIN.log('Detected intent: {} (confidence: {})\n'.format(
             response.query_result.intent.display_name,
             response.query_result.intent_detection_confidence))
-        print('Fulfillment text: {}\n'.format(
+        self.DUSTBIN.log('Fulfillment text: {}\n'.format(
         response.query_result.fulfillment_text))
-        self.speaker.say(response.query_result.fulfillment_text, callback)
+        self.speaker.say(response.query_result.fulfillment_text)
         return response
 
-    def listen(self, seconds, callback=None) :
-        filename = self.listener.record(seconds)
-        self.detect_intent_audio(filename, callback)
-
-
-def doSomething() :
-    print('Called back!')
+    def interpretAudio(self) :
+        filename = self.listener.listen()
+        response = None
+        try :
+            response = self._detect_intent_audio(filename)
+        except :
+            response = None
+        return response
+    
+    def interpretText(self, text) :
+        return self._detect_intent_text(text)
 
 def main():
     com = Communicator(None)
-    #com.sendText('Who are you?')
-    #event = apiai.events.Event("my_custom_event")
-    #com.sendEvent(event)
-    #com.detect_intent_texts('hi', doSomething)
-    com.detect_intent_audio('spoken.wav', doSomething)
-    com.listen(10, doSomething)
+    #com.interpretText('hi')
+    com.interpretAudio()
 
 if __name__ == '__main__':
     main()
