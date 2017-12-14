@@ -8,11 +8,11 @@ class SpeechEngine :
     def __init__(self, dustbin) :
         self.rate = 150
         #     Geordie (bad)
-#        self.voice = 'english-north'
+        self.voice = 'english-north'
         #     US male (ok)
 #        self.voice = 'english-us'
-        #     British female (ok)
-        self.voice = 'english+f2'
+#             British female (ok)
+        #self.voice = 'english+f2'
         self.volume = 0.5
         self.DUSTBIN = dustbin
     def sayUgly(self, message) :
@@ -27,7 +27,10 @@ class SpeechEngine :
         message = message.replace('\'', '\'\\\'\'')
         os.system('echo \'%s\' | ai/betterEngine.sh' %message)
     def say(self, message) :
-        self.DUSTBIN.log(message)
+        if (self.DUSTBIN) :
+            self.DUSTBIN.log(message)
+        else :
+            print(message)
         if self.DUSTBIN is not None and self.DUSTBIN.hasInternet() :
             self.sayPretty(message)
         else :

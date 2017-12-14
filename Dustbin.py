@@ -27,6 +27,9 @@ def internet(host="8.8.8.8", port=53, timeout=3):
     print ex.message
     return False
 
+# TODO : I want to be able to subscribe to events.
+# When something happens, send the code to a switch, which will run all subscribed target callbacks
+
 class Dustbin :
     def __init__(self, logfh, audio_timeout, verbose) :
         self.com = Communicator(audio_timeout, self)
