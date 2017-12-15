@@ -10,7 +10,6 @@ from ai.Communicator import Communicator
 from robot.move import Move
 from time import time
 from Switchboard import Switchboard
-
 from Events import Events
 
 import socket
@@ -27,9 +26,6 @@ def internet(host="8.8.8.8", port=53, timeout=3):
   except Exception as ex:
     print ex.message
     return False
-
-# TODO : I want to be able to subscribe to events.
-# When something happens, send the code to a switch, which will run all subscribed target callbacks
 
 class Dustbin :
     def __init__(self, logfh, audio_timeout, verbose) :
@@ -49,14 +45,16 @@ class Dustbin :
         if self._logfh is not None :
             self._logfh.write(message)
             self._logfh.write('\n')
-    def subscribe(self, event, callback) :
-        self.switchboard.setCallback(event, callback)
+    def subscribe(self, listener) :
+        self.switchboard.subscribe(listener)
     def trigger(self, event, params=None) :
         self.switchboard.runTrigger(event, params)
     def done(self) :
         self.keepGoing = False
     def run(self) :
-        self.subscribe(Events.REQ_SHUTDOWN, self.done)
+        ShutdownListener = Events.EventListener(Events.REQ_SHUTDOWN)
+        ShutdownListener.setCallback(self.done)
+        self.subscribe(ShutdownListener)
         while self.keepGoing :
             response = self.com.interpretAudio()
     def hasInternet(self) :

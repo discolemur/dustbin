@@ -1,7 +1,7 @@
 import dialogflow
 
-from SpeechEngine import SpeechEngine
-from Listener import Listener
+from lib.SpeechEngine import SpeechEngine
+from lib.AudioHandler import AudioHandler
 from Events import Events
 
 _SESSION_ID = 'dev_sesh'
@@ -25,8 +25,8 @@ NEW:         pcm.{cardname} cards.pcm.default
 
 class Communicator :
     def __init__(self, audio_timeout, dustbin) :
-        self.speaker = SpeechEngine(dustbin)
-        self.listener = Listener(audio_timeout, dustbin)
+        self.speaker = SpeechEngine(dustbin.log, dustbin.hasInternet)
+        self.audioHandler = AudioHandler(audio_timeout)
         self.DUSTBIN = dustbin
     
     def _detect_intent_text(self, text):
@@ -59,7 +59,7 @@ class Communicator :
         # Note: hard coding audio_encoding and sample_rate_hertz for simplicity.
         audio_encoding = dialogflow.enums.AudioEncoding.AUDIO_ENCODING_LINEAR_16
         #sample_rate_hertz = 16000
-        sample_rate_hertz = self.listener.RATE
+        sample_rate_hertz = self.audioHandler.RATE
         session = session_client.session_path(_PROJECT_ID, _SESSION_ID)
         self.DUSTBIN.log('Session path: {}\n'.format(session))
         with open(audio_file_path, 'rb') as audio_file:
@@ -81,36 +81,74 @@ class Communicator :
         self.speaker.say(response.query_result.fulfillment_text)
         return response
 
-    def interpretAudio(self) :
-        filename = self.listener.listen()
-        response = None
-        try :
-            response = self._detect_intent_audio(filename)
-            self.handleAction(response)
-        except :
-            response = None
-        return response
-
-    def handleAction(self, response) :
-        action = response.query_result.action
+    def _handleAction(self, response) :
+        result = response.query_result
+        action = result.action
+        self.DUSTBIN.trigger(Events.HEAR_AUDIO)
         if action == 'input.unknown' :
             self.DUSTBIN.trigger(Events.NOT_UNDERSTAND_MSG)
             return
         self.DUSTBIN.trigger(Events.UNDERSTAND_MSG)
         if action == 'system.shutdown' :
             self.DUSTBIN.trigger(Events.REQ_SHUTDOWN)
-        if action == 'visual.identify' :
-            self.DUSTBIN.trigger(Events.REQ_IDENTIFY_PERSON, response.query_result.parameters.person[0])
+        if action == 'introduction' :
+            self.DUSTBIN.trigger(Events.INTRODUCE_ROBOT)
+        if action == 'identify.person' :
+            params = {
+                'person' : result.parameters['person']
+            }
+            # TODO make sure we don't trigger until person parameter is resolved (conversation may occur on dialogflow's side)
+            self.DUSTBIN.trigger(Events.REQ_IDENTIFY_PERSON, params)
+        if action == 'find.person' :
+            params = {
+                'relative' : result.parameters['relative'],
+                'person' : result.parameters['person']
+            }
+            self.DUSTBIN.trigger(Events.REQ_FIND_PERSON, params)
         if action == 'go.follow' :
-            person = ''
-            if response.query_result.parameters.relative.length > 0 :
-                person = response.query_result.parameters.relative
-            if response.query_result.parameters.person.length > 0 :
-                person = response.query_result.parameters.person
-            if response.query_result.parameters['given-name'].length > 0 :
-                person = response.query_result.parameters['given-name']
-            self.DUSTBIN.trigger(Events.REQ_FOLLOW, {person: person})
-        # TODO fill in the rest.
+            params = {
+                'relative' : result.parameters['relative'],
+                'person' : result.parameters['person']
+            }
+            self.DUSTBIN.trigger(Events.REQ_FOLLOW, params)
+        if action == 'go.wait' :
+            params = {
+                'object' : result.parameters['object'],
+                'preposition' : result.parameters['preposition']
+            }
+            self.DUSTBIN.trigger(Events.GO_WAIT, params)
+        if action == 'say.hello' :
+            self.DUSTBIN.trigger(Events.GREETINGS)
+        if action == 'say.yes' :
+            self.DUSTBIN.trigger(Events.YES)
+        if action == 'say.no' :
+            self.DUSTBIN.trigger(Events.NO)
+        if action == 'identify.object' :
+            params = {
+                'object' : result.parameters['object'],
+            }
+            self.DUSTBIN.trigger(Events.REQ_IDENTIFY_OBJECT, params)
+        if action == 'find.object' :
+            params = {
+                'object' : result.parameters['object'],
+            }
+            self.DUSTBIN.trigger(Events.REQ_FIND_OBJECT, params)
     
     def interpretText(self, text) :
-        return self._detect_intent_text(text)
+        response = None
+        try :
+            response = self._detect_intent_text(text)
+            self._handleAction(response)
+        except :
+            response = None
+        return response
+
+    def interpretAudio(self) :
+        filename = self.audioHandler.listen()
+        response = None
+        try :
+            response = self._detect_intent_audio(filename)
+            self._handleAction(response)
+        except :
+            response = None
+        return response

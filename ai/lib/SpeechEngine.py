@@ -2,8 +2,12 @@ import pyttsx
 from time import time
 import os
 
+def defaultHasInternet() :
+    return False
+
 class SpeechEngine :
-    def __init__(self, dustbin) :
+    def __init__(self, logFunction=None, hasInternetFunction=defaultHasInternet) :
+        """ Variables """
         self.rate = 150
         #     Geordie (bad)
         self.voice = 'english-north'
@@ -12,7 +16,14 @@ class SpeechEngine :
 #             British female (ok)
         #self.voice = 'english+f2'
         self.volume = 0.5
-        self.DUSTBIN = dustbin
+        """ Functions """
+        self.logFunction = logFunction
+        self.hasInternetFunction = hasInternetFunction
+    def log(self, message) :
+        if self.logFunction is not None :
+            self.logFunction(message)
+        else :
+            print(message)
     def sayUgly(self, message) :
         engine = pyttsx.init()
         engine.setProperty('rate',self.rate)
@@ -23,13 +34,10 @@ class SpeechEngine :
     def sayPretty(self, message) :
         # Make sure we escape all single-quote chars
         message = message.replace('\'', '\'\\\'\'')
-        os.system('echo \'%s\' | ai/betterEngine.sh' %message)
+        os.system('echo \'%s\' | ai/lib/betterEngine.sh' %message)
     def say(self, message) :
-        if (self.DUSTBIN) :
-            self.DUSTBIN.log(message)
-        else :
-            print(message)
-        if self.DUSTBIN is not None and self.DUSTBIN.hasInternet() :
+        self.log(message)
+        if self.hasInternetFunction() :
             self.sayPretty(message)
         else :
             self.sayUgly(message)

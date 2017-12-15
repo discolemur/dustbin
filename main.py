@@ -10,7 +10,6 @@ LOG_LIMIT = 5
 
 def removeOneLogfile(files) :
     files = sorted(files)
-    print("Removing old log file %s" %files[0])
     os.remove(files[0])
 
 def getLogfile() :
