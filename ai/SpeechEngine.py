@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 import pyttsx
 from time import time
 import os
@@ -51,13 +49,3 @@ class SpeechEngine :
             return self.volume
     def getPropertyNames(self) :
         return ['rate','voice','volume']
-
-def main() :
-    engine = SpeechEngine(None)
-    engine.say('This is what the engine sounds like by default.')
-    engine.say('Import this class, make an engine object, and use the \'say\' method to say stuff.')
-
-if __name__ == "__main__" :
-    main()
-else :
-    SpeechEngine

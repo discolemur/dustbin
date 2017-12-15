@@ -35,6 +35,6 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser()
     parser.add_argument('--verbose', '-v', action="store_true", default=False, help="Print log to console (still logs in the file).")
-    parser.add_argument('--timeout', '-t', type=int, default=15, help="Audio timeout. This is how long it will listen for your response before giving up.")
+    parser.add_argument('--timeout', '-t', type=int, default=5, help="Audio timeout. This is how long it will listen for your response before giving up.")
     args = parser.parse_args()
     main(args.timeout, args.verbose)

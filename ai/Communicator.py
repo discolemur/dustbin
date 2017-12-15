@@ -1,9 +1,8 @@
-#! /usr/bin/env python
-
 import dialogflow
 
 from SpeechEngine import SpeechEngine
 from Listener import Listener
+from Events import Events
 
 _SESSION_ID = 'dev_sesh'
 _PROJECT_ID = 'dust-bin-97d2d'
@@ -32,22 +31,16 @@ class Communicator :
     
     def _detect_intent_text(self, text):
         """Returns the result of detect intent with texts as inputs.
-
         Using the same `session_id` between requests allows continuation
         of the conversaion."""
         session_client = dialogflow.SessionsClient()
-
         session = session_client.session_path(_PROJECT_ID, _SESSION_ID)
         self.DUSTBIN.log('Session path: {}\n'.format(session))
-
         text_input = dialogflow.types.TextInput(
             text=text, language_code=_LANGUAGE_CODE)
-
         query_input = dialogflow.types.QueryInput(text=text_input)
-
         response = session_client.detect_intent(
             session=session, query_input=query_input)
-
         self.DUSTBIN.log('=' * 20)
         self.DUSTBIN.log('Query text: {}'.format(response.query_result.query_text))
         self.DUSTBIN.log('Detected intent: {} (confidence: {})\n'.format(
@@ -63,27 +56,21 @@ class Communicator :
         Using the same `session_id` between requests allows continuation
         of the conversation."""
         session_client = dialogflow.SessionsClient()
-
         # Note: hard coding audio_encoding and sample_rate_hertz for simplicity.
         audio_encoding = dialogflow.enums.AudioEncoding.AUDIO_ENCODING_LINEAR_16
         #sample_rate_hertz = 16000
         sample_rate_hertz = self.listener.RATE
-
         session = session_client.session_path(_PROJECT_ID, _SESSION_ID)
         self.DUSTBIN.log('Session path: {}\n'.format(session))
-
         with open(audio_file_path, 'rb') as audio_file:
             input_audio = audio_file.read()
-
         audio_config = dialogflow.types.InputAudioConfig(
             audio_encoding=audio_encoding, language_code=_LANGUAGE_CODE,
             sample_rate_hertz=sample_rate_hertz)
         query_input = dialogflow.types.QueryInput(audio_config=audio_config)
-
         response = session_client.detect_intent(
             session=session, query_input=query_input,
             input_audio=input_audio)
-
         self.DUSTBIN.log('=' * 20)
         self.DUSTBIN.log('Query text: {}'.format(response.query_result.query_text))
         self.DUSTBIN.log('Detected intent: {} (confidence: {})\n'.format(
@@ -99,20 +86,31 @@ class Communicator :
         response = None
         try :
             response = self._detect_intent_audio(filename)
+            self.handleAction(response)
         except :
             response = None
         return response
+
+    def handleAction(self, response) :
+        action = response.query_result.action
+        if action == 'input.unknown' :
+            self.DUSTBIN.trigger(Events.NOT_UNDERSTAND_MSG)
+            return
+        self.DUSTBIN.trigger(Events.UNDERSTAND_MSG)
+        if action == 'system.shutdown' :
+            self.DUSTBIN.trigger(Events.REQ_SHUTDOWN)
+        if action == 'visual.identify' :
+            self.DUSTBIN.trigger(Events.REQ_IDENTIFY_PERSON, response.query_result.parameters.person[0])
+        if action == 'go.follow' :
+            person = ''
+            if response.query_result.parameters.relative.length > 0 :
+                person = response.query_result.parameters.relative
+            if response.query_result.parameters.person.length > 0 :
+                person = response.query_result.parameters.person
+            if response.query_result.parameters['given-name'].length > 0 :
+                person = response.query_result.parameters['given-name']
+            self.DUSTBIN.trigger(Events.REQ_FOLLOW, {person: person})
+        # TODO fill in the rest.
     
     def interpretText(self, text) :
         return self._detect_intent_text(text)
-
-def main():
-    com = Communicator(None)
-    #com.interpretText('hi')
-    com.interpretAudio()
-
-if __name__ == '__main__':
-    main()
-else:
-    Communicator
-

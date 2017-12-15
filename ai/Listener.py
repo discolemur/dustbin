@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 """
 If pyaudio install fails, try this:
 sudo apt-get install libportaudio2 libportaudiocpp0 portaudio19-dev
@@ -148,12 +146,3 @@ class Listener :
         # cleanup stuff.
         stream.close()    
         p.terminate()
-
-def main() :
-    audio_timeout = 15
-    listener = Listener(audio_timeout, None)
-
-if __name__ == '__main__' :
-    main()
-else :
-    Listener
