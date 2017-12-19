@@ -28,7 +28,8 @@ def internet(host="8.8.8.8", port=53, timeout=3):
     return False
 
 class Dustbin :
-    def __init__(self, logfh, audio_timeout, verbose) :
+    def __init__(self, logfh, audio_timeout, verbose, silent) :
+        self.silent = silent
         self.com = Communicator(audio_timeout, self)
         self.move = Move(self)
         self._logTime = time()
@@ -39,6 +40,9 @@ class Dustbin :
         self.VERBOSE = verbose
         self.switchboard = Switchboard(self)
         self.keepGoing = True
+        ShutdownListener = Events.EventListener(Events.REQ_SHUTDOWN)
+        ShutdownListener.setCallback(self.done)
+        self.subscribe(ShutdownListener)
     def log(self, message) :
         if self.VERBOSE :
             print(message)
@@ -51,10 +55,10 @@ class Dustbin :
         self.switchboard.runTrigger(event, params)
     def done(self) :
         self.keepGoing = False
+    def runCommands(self, commands) :
+        for command in commands :
+            self.com.interpretText(command)
     def run(self) :
-        ShutdownListener = Events.EventListener(Events.REQ_SHUTDOWN)
-        ShutdownListener.setCallback(self.done)
-        self.subscribe(ShutdownListener)
         while self.keepGoing :
             response = self.com.interpretAudio()
     def hasInternet(self) :

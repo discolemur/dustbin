@@ -48,7 +48,9 @@ class Communicator :
             response.query_result.intent_detection_confidence))
         self.DUSTBIN.log('Fulfillment text: {}\n'.format(
             response.query_result.fulfillment_text))
-        self.speaker.say(response.query_result.fulfillment_text)
+        if not self.DUSTBIN.silent :
+            self.speaker.say(response.query_result.fulfillment_text)
+        self.DUSTBIN.trigger(Events.RECEIVE_TEXT)
         return response
 
     def _detect_intent_audio(self, audio_file_path):
@@ -78,13 +80,14 @@ class Communicator :
             response.query_result.intent_detection_confidence))
         self.DUSTBIN.log('Fulfillment text: {}\n'.format(
         response.query_result.fulfillment_text))
-        self.speaker.say(response.query_result.fulfillment_text)
+        if not self.DUSTBIN.silent :
+            self.speaker.say(response.query_result.fulfillment_text)
+        self.DUSTBIN.trigger(Events.HEAR_AUDIO)
         return response
 
     def _handleAction(self, response) :
         result = response.query_result
         action = result.action
-        self.DUSTBIN.trigger(Events.HEAR_AUDIO)
         if action == 'input.unknown' :
             self.DUSTBIN.trigger(Events.NOT_UNDERSTAND_MSG)
             return

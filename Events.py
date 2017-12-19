@@ -8,20 +8,25 @@ import uuid
 
 class Events :
     class EventListener :
-        def __init__(self, event) :
+        def __init__(self, event, callback=None) :
             self._event = event
             self._hash = str(uuid.uuid4())
+            self.callCount = 0
+            self._callback = callback
         def setCallback(self, callback) :
-            self.callback = callback
+            self._callback = callback
         def getEvent(self) :
             return self._event
         def getHash(self) :
             return self._hash
         def runCallback(self, params=None) :
+            self.callCount += 1
+            if self._callback is None :
+                return None
             if (params != None) :
-                self.callback(params)
+                self._callback(params)
             else :
-                self.callback()
+                self._callback()
     def __init__(self) :
         raise Exception('You can\'t create an instance of this class.\nIt is meant to only contain static constants which represent events that you can subscribe listeners to.')
 
@@ -47,6 +52,7 @@ class Events :
     OBJECT_NOT_FOUND     = 19
     HEAR_AUDIO           = 20
     UNDERSTAND_MSG       = 21
+    RECEIVE_TEXT         = 22
 
-    KEYS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]
-    NEXT_KEY             = 22
+    KEYS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
+    NEXT_KEY             = 23
