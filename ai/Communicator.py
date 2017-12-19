@@ -4,7 +4,8 @@ from lib.SpeechEngine import SpeechEngine
 from lib.AudioHandler import AudioHandler
 from Events import Events
 
-_SESSION_ID = 'dev_sesh'
+from time import time
+_SESSION_ID = 'dev_sesh_%d' %time()
 _PROJECT_ID = 'dust-bin-97d2d'
 _LANGUAGE_CODE = 'en-US'
 
@@ -32,7 +33,7 @@ class Communicator :
     def _detect_intent_text(self, text):
         """Returns the result of detect intent with texts as inputs.
         Using the same `session_id` between requests allows continuation
-        of the conversaion."""
+        of the conversation."""
         session_client = dialogflow.SessionsClient()
         session = session_client.session_path(_PROJECT_ID, _SESSION_ID)
         self.DUSTBIN.log('Session path: {}\n'.format(session))
@@ -46,8 +47,7 @@ class Communicator :
         self.DUSTBIN.log('Detected intent: {} (confidence: {})\n'.format(
             response.query_result.intent.display_name,
             response.query_result.intent_detection_confidence))
-        self.DUSTBIN.log('Fulfillment text: {}\n'.format(
-            response.query_result.fulfillment_text))
+        self.DUSTBIN.log('Fulfillment text: {}\n'.format(response.query_result.fulfillment_text))
         if not self.DUSTBIN.silent :
             self.speaker.say(response.query_result.fulfillment_text)
         self.DUSTBIN.trigger(Events.RECEIVE_TEXT)
@@ -78,8 +78,7 @@ class Communicator :
         self.DUSTBIN.log('Detected intent: {} (confidence: {})\n'.format(
             response.query_result.intent.display_name,
             response.query_result.intent_detection_confidence))
-        self.DUSTBIN.log('Fulfillment text: {}\n'.format(
-        response.query_result.fulfillment_text))
+        self.DUSTBIN.log('Fulfillment text: {}\n'.format(response.query_result.fulfillment_text))
         if not self.DUSTBIN.silent :
             self.speaker.say(response.query_result.fulfillment_text)
         self.DUSTBIN.trigger(Events.HEAR_AUDIO)
