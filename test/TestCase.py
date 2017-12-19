@@ -50,8 +50,11 @@ class TestCase :
         self.message = self.message + ': ' + 'param %s is empty.' %key
 
 
-    def addCommand(self, commandFunction) :
-        commandFunction(self)
+    def addCommand(self, commandFunction, params=None) :
+        if params is not None :
+            commandFunction(self, params)
+        else :
+            commandFunction(self)
         return self
 
     @staticmethod

@@ -77,7 +77,10 @@ class Dustbin :
     def runCommands(self, commands, callback) :
         self.callback = callback
         for command in commands :
-            self.com.interpretText(command)
+            if '.wav' in command:
+                self.com.interpretFromWavFile(command)
+            else :
+                self.com.interpretText(command)
             sleep(0.5)
         # Yes, we need to do this more than once or it won't work.
         self.done()

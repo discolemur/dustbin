@@ -66,6 +66,27 @@ def testIdentifyObject() :
     return getTestCase(title) \
         .addCommand(Commands.identifyObjectCommand)
 
+def testIntroduction() :
+    title = 'Test introduction'
+    return getTestCase(title) \
+        .addCommand(Commands.introductionCommand)
+
+def testUnknown() :
+    title = 'Test unknown command'
+    return getTestCase(title) \
+        .addCommand(Commands.unknownCommand)
+
+def testCheckHearing() :
+    title = 'Test check hearing'
+    return getTestCase(title) \
+        .addCommand(Commands.checkHearingCommand)
+
+def testWait() :
+    title = 'Test unknown command'
+    params = {'preposition':'by', 'obj':'the door'}
+    return getTestCase(title) \
+        .addCommand(Commands.waitCommand, params)
+
 def report() :
     sys.stdout.write('      Test Results:\033[92m %d passing' %passing)
     if failing :
@@ -91,7 +112,11 @@ def main() :
         testFindMe(),
         testFindObject(),
         testIdentifyObject(),
-        testIdentifyPerson()
+        testIdentifyPerson(),
+        testIntroduction(),
+        testUnknown(),
+        testCheckHearing(),
+        testWait()
     ]
     for testCase in tests :
         testCase.runTest(handleResult)

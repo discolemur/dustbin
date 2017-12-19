@@ -147,8 +147,7 @@ class Communicator :
             response = None
         return response
 
-    def interpretAudio(self) :
-        filename = self.audioHandler.listen()
+    def interpretFromWavFile(self, filename) :
         response = None
         try :
             response = self._detect_intent_audio(filename)
@@ -156,3 +155,7 @@ class Communicator :
         except :
             response = None
         return response
+
+    def interpretAudio(self) :
+        filename = self.audioHandler.listen()
+        return self.interpretFromWavFile(filename)
