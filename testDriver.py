@@ -27,22 +27,44 @@ def getTestCase(title) :
 
 def testShutdown() :
     title = 'Test Shutdown'
-    testCase = getTestCase(title)
-    testCase.addCommand(Commands.shutdownCommand)
-    return testCase
+    return getTestCase(title) \
+        .addCommand(Commands.shutdownCommand)
 
 def testHello() :
-    testCase = title = 'Test Hello'
-    testCase = getTestCase(title)
-    testCase.addCommand(Commands.helloCommand)
-    return testCase
+    title = 'Test Hello'
+    return getTestCase(title) \
+        .addCommand(Commands.helloCommand)
 
 def testHelloGoodbye() :
     title = 'Test Hello then Shutdown'
-    testCase = getTestCase(title)
-    testCase.addCommand(Commands.helloCommand)
-    testCase.addCommand(Commands.shutdownCommand)
-    return testCase
+    return getTestCase(title) \
+        .addCommand(Commands.helloCommand) \
+        .addCommand(Commands.shutdownCommand)
+
+def testFollowMe() :
+    title = 'Test follow me'
+    return getTestCase(title) \
+        .addCommand(Commands.followMeCommand)
+
+def testFindMe() :
+    title = 'Test find person'
+    return getTestCase(title) \
+        .addCommand(Commands.findPersonCommand)
+
+def testFindObject() :
+    title = 'Test find object'
+    return getTestCase(title) \
+        .addCommand(Commands.findObjectCommand)
+
+def testIdentifyPerson() :
+    title = 'Test identify person'
+    return getTestCase(title) \
+        .addCommand(Commands.identifyPersonCommand)
+
+def testIdentifyObject() :
+    title = 'Test identify object'
+    return getTestCase(title) \
+        .addCommand(Commands.identifyObjectCommand)
 
 def report() :
     sys.stdout.write('      Test Results:\033[92m %d passing' %passing)
@@ -58,14 +80,18 @@ def handleResult(success) :
     else :
         failing += 1
 
-
 def main() :
     global passing
     global failing
     tests = [
         testHello(),
         testShutdown(),
-        testHelloGoodbye()
+        testHelloGoodbye(),
+        testFollowMe(),
+        testFindMe(),
+        testFindObject(),
+        testIdentifyObject(),
+        testIdentifyPerson()
     ]
     for testCase in tests :
         testCase.runTest(handleResult)

@@ -29,6 +29,8 @@ class Communicator :
         self.speaker = SpeechEngine(dustbin.log, dustbin.hasInternet)
         self.audioHandler = AudioHandler(audio_timeout)
         self.DUSTBIN = dustbin
+        self.speakListener = Events.EventListener(Events.SPEAK, self.speak)
+        self.DUSTBIN.subscribe(self.speakListener)
     
     def _detect_intent_text(self, text):
         """Returns the result of detect intent with texts as inputs.
@@ -48,8 +50,6 @@ class Communicator :
             response.query_result.intent.display_name,
             response.query_result.intent_detection_confidence))
         self.DUSTBIN.log('Fulfillment text: {}\n'.format(response.query_result.fulfillment_text))
-        if not self.DUSTBIN.silent :
-            self.speaker.say(response.query_result.fulfillment_text)
         self.DUSTBIN.trigger(Events.RECEIVE_TEXT)
         return response
 
@@ -79,14 +79,22 @@ class Communicator :
             response.query_result.intent.display_name,
             response.query_result.intent_detection_confidence))
         self.DUSTBIN.log('Fulfillment text: {}\n'.format(response.query_result.fulfillment_text))
-        if not self.DUSTBIN.silent :
-            self.speaker.say(response.query_result.fulfillment_text)
         self.DUSTBIN.trigger(Events.HEAR_AUDIO)
         return response
+
+    def speak(self, params) :
+        if self.DUSTBIN.silent :
+            self.DUSTBIN.logLock.acquire()
+            print params['message']
+            self.DUSTBIN.logLock.release()
+        else :
+            self.speaker.say(params['message'])
 
     def _handleAction(self, response) :
         result = response.query_result
         action = result.action
+        if len(result.fulfillment_text) > 0 :
+            self.DUSTBIN.trigger(Events.SPEAK, {'message':result.fulfillment_text})
         if action == 'input.unknown' :
             self.DUSTBIN.trigger(Events.NOT_UNDERSTAND_MSG)
             return
@@ -97,21 +105,15 @@ class Communicator :
             self.DUSTBIN.trigger(Events.INTRODUCE_ROBOT)
         if action == 'identify.person' :
             params = {
-                'person' : result.parameters['person']
+                'pronoun' : result.parameters['pronoun']
             }
             # TODO make sure we don't trigger until person parameter is resolved (conversation may occur on dialogflow's side)
             self.DUSTBIN.trigger(Events.REQ_IDENTIFY_PERSON, params)
         if action == 'find.person' :
-            params = {
-                'relative' : result.parameters['relative'],
-                'person' : result.parameters['person']
-            }
+            params = { key : result.parameters['person'][key] for key in result.parameters['person']}
             self.DUSTBIN.trigger(Events.REQ_FIND_PERSON, params)
         if action == 'go.follow' :
-            params = {
-                'relative' : result.parameters['relative'],
-                'person' : result.parameters['person']
-            }
+            params = { key : result.parameters['person'][key] for key in result.parameters['person']}
             self.DUSTBIN.trigger(Events.REQ_FOLLOW, params)
         if action == 'go.wait' :
             params = {
@@ -127,12 +129,12 @@ class Communicator :
             self.DUSTBIN.trigger(Events.NO)
         if action == 'identify.object' :
             params = {
-                'object' : result.parameters['object'],
+                'object' : result.parameters['object']
             }
             self.DUSTBIN.trigger(Events.REQ_IDENTIFY_OBJECT, params)
         if action == 'find.object' :
             params = {
-                'object' : result.parameters['object'],
+                'object' : result.parameters['object']
             }
             self.DUSTBIN.trigger(Events.REQ_FIND_OBJECT, params)
     

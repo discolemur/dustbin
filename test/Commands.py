@@ -2,12 +2,6 @@
 
 from Events import Events
 
-'''
-
-For simplicity, ECC is eventCallCount (number of expected calls to that listener)
-
-'''
-
 def incrementEventCount(testCase, event) :
     if event not in testCase.eventCallCount :
         testCase.eventCallCount[event] = 0
@@ -17,10 +11,11 @@ def incrementEventCount(testCase, event) :
 class Commands :
     @staticmethod
     def shutdownCommand(testCase) :
-        testCase.commands.append("Turn yourself off.")
+        testCase.commands.append("Shutdown.")
         testCase = incrementEventCount(testCase, Events.REQ_SHUTDOWN)
         testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
         testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
+        testCase = incrementEventCount(testCase, Events.SPEAK)
         return testCase
 
     @staticmethod
@@ -29,4 +24,52 @@ class Commands :
         testCase = incrementEventCount(testCase, Events.GREETINGS)
         testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
         testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
+        testCase = incrementEventCount(testCase, Events.SPEAK)
         return testCase
+
+    @staticmethod
+    def followMeCommand(testCase) :
+        testCase.commands.append('Follow me.')
+        testCase = incrementEventCount(testCase, Events.REQ_FOLLOW)
+        testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
+        testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
+        testCase = incrementEventCount(testCase, Events.SPEAK)
+        return testCase
+
+    @staticmethod
+    def identifyPersonCommand(testCase) :
+        testCase.commands.append('Who is this?')
+        testCase = incrementEventCount(testCase, Events.REQ_IDENTIFY_PERSON)
+        testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
+        testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
+        testCase = incrementEventCount(testCase, Events.SPEAK)
+        return testCase
+
+    @staticmethod
+    def findPersonCommand(testCase) :
+        testCase.commands.append('Find me.')
+        testCase = incrementEventCount(testCase, Events.REQ_FIND_PERSON)
+        testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
+        testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
+        testCase = incrementEventCount(testCase, Events.SPEAK)
+        return testCase
+
+    @staticmethod
+    def identifyObjectCommand(testCase) :
+        testCase.commands.append('What is this?')
+        testCase = incrementEventCount(testCase, Events.REQ_IDENTIFY_OBJECT)
+        testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
+        testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
+        testCase = incrementEventCount(testCase, Events.SPEAK)
+        return testCase
+
+    @staticmethod
+    def findObjectCommand(testCase) :
+        testCase.commands.append('Find the doorway.')
+        testCase = incrementEventCount(testCase, Events.REQ_FIND_OBJECT)
+        testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
+        testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
+        testCase = incrementEventCount(testCase, Events.SPEAK)
+        return testCase
+
+

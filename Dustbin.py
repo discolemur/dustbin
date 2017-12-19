@@ -32,25 +32,31 @@ def internet(host="8.8.8.8", port=53, timeout=3):
 
 class Dustbin :
     def __init__(self, logfh, audio_timeout, verbose, silent) :
+        self.initVars(logfh, verbose, silent)
+        # First need a switchboard for subscription
+        self.switchboard = Switchboard(self)
+        self.switchboardThread = Thread(target = self.switchboard.run)
+        self.switchboardThread.start()
+        # Then need a communicator
+        self.com = Communicator(audio_timeout, self)
+        # Finally can add a robot
+        self.robot = Robot(self)
+        self.robotThread = Thread(target = self.robot.run)
+        self.robotThread.start()
+        # End by subscribing to shutdown
+        ShutdownListener = Events.EventListener(Events.REQ_SHUTDOWN, self.done)
+        self.subscribe(ShutdownListener)
+    def initVars(self, logfh, verbose, silent) :
         self.keepGoing = True
         self._REFRESH_RATE = 60
         self.VERBOSE = verbose
         self.silent = silent
         self._logfh = logfh
         self.logLock = Lock()
+        # Checks for internet connection after this amount of time.
         self._logTime = time()
         self._hasInternet = internet()
-        self.com = Communicator(audio_timeout, self)
-        # Checks for internet connection after this amount of time.
-        self.switchboard = Switchboard(self)
-        self.switchboardThread = Thread(target = self.switchboard.run)
-        self.switchboardThread.start()
-        self.robot = Robot(self)
-        self.robotThread = Thread(target = self.robot.run)
-        self.robotThread.start()
-        ShutdownListener = Events.EventListener(Events.REQ_SHUTDOWN)
-        ShutdownListener.setCallback(self.done)
-        self.subscribe(ShutdownListener)
+
     def log(self, message) :
         self.logLock.acquire()
         if self.VERBOSE :
