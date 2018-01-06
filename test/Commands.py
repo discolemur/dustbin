@@ -2,7 +2,7 @@
 # NOTE: try to keep them in the same order as dialogflow keeps them.
 # It's easier to keep track that way.
 
-from Events import Events
+from communication.Events import Events
 
 def incrementEventCount(testCase, event) :
     if event not in testCase.eventCallCount :
@@ -45,6 +45,7 @@ class Commands :
         testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
         testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
         testCase = incrementEventCount(testCase, Events.SPEAK)
+        testCase = incrementEventCount(testCase, Events.OBJECT_FOUND)
         return testCase
 
     @staticmethod
@@ -54,6 +55,7 @@ class Commands :
         testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
         testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
         testCase = incrementEventCount(testCase, Events.SPEAK)
+        testCase = incrementEventCount(testCase, Events.PERSON_FOUND)
         return testCase
 
     @staticmethod
@@ -72,6 +74,7 @@ class Commands :
         testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
         testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
         testCase = incrementEventCount(testCase, Events.SPEAK)
+        testCase = incrementEventCount(testCase, Events.PERSON_IDENTIFIED)
         return testCase
 
     @staticmethod
@@ -81,6 +84,7 @@ class Commands :
         testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
         testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
         testCase = incrementEventCount(testCase, Events.SPEAK)
+        testCase = incrementEventCount(testCase, Events.OBJECT_IDENTIFIED)
         return testCase
 
     @staticmethod

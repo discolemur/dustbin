@@ -1,4 +1,4 @@
-from Events import Events
+from communication.Events import Events
 import sys
 
 AUDIO_TIMEOUT = 4

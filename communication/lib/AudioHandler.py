@@ -45,7 +45,7 @@ import os
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class AudioHandler :
-    AUDIO_PATH = 'ai/lib/audio/last_recorded_message.wav'
+    AUDIO_PATH = 'communication/lib/audio/last_recorded_message.wav'
     def __init__(self, audio_timeout) :
         self.RATE = 16000
         self.FORMAT = pyaudio.paInt16

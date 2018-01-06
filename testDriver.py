@@ -3,7 +3,7 @@
 import sys
 
 from Dustbin import Dustbin
-from Events import Events
+from communication.Events import Events
 
 from test.Commands import Commands
 from test.TestCase import TestCase

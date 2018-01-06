@@ -5,6 +5,7 @@ from lib.AudioHandler import AudioHandler
 from Events import Events
 
 from time import time
+from time import sleep
 _SESSION_ID = 'dev_sesh_%d' %time()
 _PROJECT_ID = 'dust-bin-97d2d'
 _LANGUAGE_CODE = 'en-US'
@@ -157,5 +158,6 @@ class Communicator :
         return response
 
     def interpretAudio(self) :
+        sleep(2)
         filename = self.audioHandler.listen()
         return self.interpretFromWavFile(filename)

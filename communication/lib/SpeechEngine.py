@@ -34,7 +34,7 @@ class SpeechEngine :
     def sayPretty(self, message) :
         # Make sure we escape all single-quote chars
         message = message.replace('\'', '\'\\\'\'')
-        os.system('echo \'%s\' | ai/lib/betterEngine.sh' %message)
+        os.system('echo \'%s\' | communication/lib/betterEngine.sh' %message)
     def say(self, message) :
         self.log(message)
         if self.hasInternetFunction() :

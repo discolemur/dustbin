@@ -6,12 +6,13 @@ Contains the main switchboard for the project, connecting all other components.
 Holds global variables and global methods.
 """
 
-from ai.Communicator import Communicator
+from communication.Communicator import Communicator
 from robot.Robot import Robot
 from time import time
 from time import sleep
-from Switchboard import Switchboard
-from Events import Events
+from communication.Switchboard import Switchboard
+from communication.Events import Events
+from machine_learning.Vision import Vision
 from threading import Thread
 from threading import Lock
 
@@ -43,6 +44,9 @@ class Dustbin :
         self.robot = Robot(self)
         self.robotThread = Thread(target = self.robot.run)
         self.robotThread.start()
+        self.vision = Vision(self)
+        self.visionThread = Thread(target = self.vision.run)
+        self.visionThread.start()
         # End by subscribing to shutdown
         ShutdownListener = Events.EventListener(Events.REQ_SHUTDOWN, self.done)
         self.subscribe(ShutdownListener)
@@ -74,6 +78,7 @@ class Dustbin :
         # NEVER REMOVE THIS LINE! Somehow, it is necessary.
         self.switchboard.stop()
         self.robot.stop()
+        self.vision.stop()
     def runCommands(self, commands, callback) :
         self.callback = callback
         for command in commands :

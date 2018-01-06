@@ -5,11 +5,20 @@ This is just a bogus class: a placeholder for future robot com classes.
 """
 
 from threading import Lock
+import Create
+
+ROOMBA_PORT = "/dev/ttyUSB0"
+BAUD_RATE = 115200
 
 class Robot :
     def __init__(self, dustbin) :
         self.stuff = 'magic'
         self.DUSTBIN = dustbin
+        try :
+            self.robot = Create.Create(ROOMBA_PORT, BAUD_RATE, Create.SAFE_MODE)
+        except :
+            self.DUSTBIN.log('Could not connect to Roomba.')
+            self.robot = None
         self.actMutex = Lock()
     def move(self, position) :
         self.actMutex.acquire()
