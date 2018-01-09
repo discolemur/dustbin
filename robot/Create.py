@@ -144,7 +144,7 @@ def modeStr( mode ):
     if mode == PASSIVE_MODE: return 'PASSIVE_MODE'
     if mode == SAFE_MODE: return 'SAFE_MODE'
     if mode == FULL_MODE: return 'FULL_MODE'
-    print 'Warning: unknown mode', mode, 'seen in modeStr'
+    self.DUSTBIN.log('Warning: unknown mode', mode, 'seen in modeStr')
     return 'UNKNOWN_MODE'
 
 #
@@ -152,16 +152,16 @@ def modeStr( mode ):
 #
 def _bytesOfR( r ):
     """ for looking at the raw bytes of a sensor reply, r """
-    print 'raw r is', r
+    self.DUSTBIN.log('raw r is', r)
     for i in range(len(r)):
-        print 'byte', i, 'is', ord(r[i])
-    print 'finished with formatR'
+        self.DUSTBIN.log('byte', i, 'is', ord(r[i]))
+    self.DUSTBIN.log('finished with formatR')
 
 def _bitOfByte( bit, byte ):
     """ returns a 0 or 1: the value of the 'bit' of 'byte' """
     if bit < 0 or bit > 7:
-        print 'Your bit of', bit, 'is out of range (0-7)'
-        print 'returning 0'
+        self.DUSTBIN.log('Your bit of', bit, 'is out of range (0-7)')
+        self.DUSTBIN.log('returning 0')
         return 0
     return ((byte >> bit) & 0x01)
 
@@ -440,7 +440,8 @@ class Create:
     if it's not attached!
     """
     # to do: check if we can start in other modes...
-    def __init__(self, PORT, BAUD_RATE=115200, startingMode=SAFE_MODE):
+    def __init__(self, dustbin, PORT, BAUD_RATE=115200, startingMode=SAFE_MODE):
+        self.DUSTBIN = dustbin
         """ the constructor which tries to open the
         connection to the robot at port PORT
         """
@@ -454,31 +455,31 @@ class Create:
         
         # if PORT is the string 'simulated' (or any string for the moment)
         # we use our SRSerial class
-        print 'PORT is', PORT
+        self.DUSTBIN.log('PORT is', PORT)
         if type(PORT) == type('string'):
             if PORT == 'sim':
-                print 'In simulated mode...'
+                self.DUSTBIN.log('In simulated mode...')
                 self.ser = 'sim'; # SRSerial('mapSquare.txt')
             else:
                 # for Mac/Linux - use whole port name
-                # print 'In Mac/Linux mode...'
+                # self.DUSTBIN.log('In Mac/Linux mode...')
                 self.ser = serial.Serial(PORT, baudrate=BAUD_RATE, timeout=0.5)
         # otherwise, we try to open the numeric serial port...
         else:
-            # print 'In Windows mode...'
+            # self.DUSTBIN.log('In Windows mode...')
             self.ser = serial.Serial(PORT-1, baudrate=BAUD_RATE, timeout=0.5)
         
         # did the serial port actually open?
         if self.ser != 'sim' and self.ser.isOpen():
-            print 'Serial port did open, presumably to a roomba...'
+            self.DUSTBIN.log('Serial port did open, presumably to a roomba...')
         else:
-            print 'Serial port did NOT open, check the'
-            print '  - port number'
-            print '  - physical connection'
-            print '  - baud rate of the roomba (it\'s _possible_, if unlikely,'
-            print '              that it might be set to 19200 instead'
-            print '              of the default 57600 - removing and'
-            print '              reinstalling the battery should reset it.'
+            self.DUSTBIN.log('Serial port did NOT open, check the')
+            self.DUSTBIN.log('  - port number')
+            self.DUSTBIN.log('  - physical connection')
+            self.DUSTBIN.log('  - baud rate of the roomba (it\'s _possible_, if unlikely,')
+            self.DUSTBIN.log('              that it might be set to 19200 instead')
+            self.DUSTBIN.log('              of the default 57600 - removing and')
+            self.DUSTBIN.log('              reinstalling the battery should reset it.')
         
         # our OI mode
         self.sciMode = OFF_MODE
@@ -503,11 +504,11 @@ class Create:
         time.sleep(0.3)
         
         if (startingMode == SAFE_MODE):
-            print 'Putting the robot into safe mode...'
+            self.DUSTBIN.log('Putting the robot into safe mode...')
             self.toSafeMode()
         
         if (startingMode == FULL_MODE):
-            print 'Putting the robot into full mode...'
+            self.DUSTBIN.log('Putting the robot into full mode...')
             self.toSafeMode()
             time.sleep(0.3)
             self.toFullMode()
@@ -666,14 +667,14 @@ class Create:
         # now we compute our global offsets
         dx_global = dx*unitForwardX + dy*unitPerpX
         dy_global = dx*unitForwardY + dy*unitPerpY
-        ##print 'distance and rawAngle', distance, rawAngle
-        ##print 'local offsets, x, y, thd', dx, dy, math.degrees(dthr)
-        ##print 'global offsets, x, y, thd', dx_global, dy_global, math.degrees(dthr)
+        ##self.DUSTBIN.log('distance and rawAngle', distance, rawAngle)
+        ##self.DUSTBIN.log('local offsets, x, y, thd', dx, dy, math.degrees(dthr))
+        ##self.DUSTBIN.log('global offsets, x, y, thd', dx_global, dy_global, math.degrees(dthr))
         # and we add them all in...
         self.xPose += dx_global
         self.yPose += dy_global
         self.thrPose += dthr
-        #print 'final pose', self.xPose, self.yPose, self.thrPose
+        #self.DUSTBIN.log('final pose', self.xPose, self.yPose, self.thrPose)
         return
     
     def setWheelVelocities( self, left_cm_sec, right_cm_sec ):
@@ -759,11 +760,14 @@ class Create:
         # is there other clean up to be done?
         # let's get rid of any lingering odometric data
         # we don't call getSensorList, because we don't want to integrate the odometry...
-        self._getRawSensorDataAsList( [19,20] )
-        time.sleep(0.1)
-        self._start()       # send Create back to passive mode
-        time.sleep(0.1)
-        self.ser.close()
+        try :
+            self._getRawSensorDataAsList( [19,20] )
+            time.sleep(0.1)
+            self._start()       # send Create back to passive mode
+            time.sleep(0.1)
+            self.ser.close()
+        except serial.serialposix.portNotOpenError as e :
+            'Port not closed successfully. Was it open?'
         return
     
     def _closeSer(self):
@@ -817,7 +821,7 @@ class Create:
                 roomba_radius_mm = 1
         radiusHighVal, radiusLowVal = _toTwosComplement2Bytes( roomba_radius_mm )
         
-        #print 'bytes are', velHighVal, velLowVal, radiusHighVal, radiusLowVal
+        #self.DUSTBIN.log('bytes are', velHighVal, velLowVal, radiusHighVal, radiusLowVal)
         
         # send these bytes and set the stored velocities
         self._write( DRIVE )
@@ -844,8 +848,8 @@ class Create:
         except TypeError:
             power = 128
             powercolor = 128
-            print 'Type excpetion caught in setAbsoluteLEDs in roomba.py'
-            print 'Your power_color or power_intensity was not of type int.'
+            self.DUSTBIN.log('Type excpetion caught in setAbsoluteLEDs in roomba.py')
+            self.DUSTBIN.log('Your power_color or power_intensity was not of type int.')
         if power < 0: power = 0
         if power > 255: power = 255
         if powercolor < 0: powercolor = 0
@@ -855,7 +859,7 @@ class Create:
         firstByteVal =  (advance << 3) | (play << 1) 
         
         # send these as bytes
-        # print 'bytes are', firstByteVal, powercolor, power
+        # self.DUSTBIN.log('bytes are', firstByteVal, powercolor, power)
         self._write( LEDS )
         self._write( chr(firstByteVal) )
         self._write( chr(powercolor) )
@@ -918,7 +922,7 @@ class Create:
 
         r = self.ser.read(size=resultLength)
         r = [ ord(c) for c in r ]   # convert to ints
-        #print 'r is ', r
+        #self.DUSTBIN.log('r is ', r)
         return r
 
     
@@ -971,11 +975,11 @@ class Create:
         """
         # any notes to play?
         if type(songDataList) != type([]) and type(songDataList) != type(()):
-            print 'songDataList was', songDataList
+            self.DUSTBIN.log('songDataList was', songDataList)
             return 
         
         if len(songDataList) < 1:
-            print 'No data in the songDataList'
+            self.DUSTBIN.log('No data in the songDataList')
             return
         
         if songNumber < 0: songNumber = 0
@@ -1083,15 +1087,15 @@ class Create:
     
     def _rawRecv( self ):
         nBytesWaiting = self.ser.inWaiting()
-        #print 'nBytesWaiting is', nBytesWaiting
+        #self.DUSTBIN.log('nBytesWaiting is', nBytesWaiting)
         r = self.ser.read(size=nBytesWaiting)
         r = [ ord(x) for x in r ]
-        #print 'r is', r
+        #self.DUSTBIN.log('r is', r)
         return r
     
     def _rawRecvStr( self ):
         nBytesWaiting = self.ser.inWaiting()
-        #print 'nBytesWaiting is', nBytesWaiting
+        #self.DUSTBIN.log('nBytesWaiting is', nBytesWaiting)
         r = self.ser.read(size=nBytesWaiting)
         return r
     
@@ -1190,49 +1194,49 @@ class Create:
         d = self.sensord
         pose = d[POSE]
         
-        print '                   LEFT_BUMP:', d[LEFT_BUMP]
-        print '                  RIGHT_BUMP:', d[RIGHT_BUMP]
-        print '             LEFT_WHEEL_DROP:', d[LEFT_WHEEL_DROP]
-        print '            RIGHT_WHEEL_DROP:', d[RIGHT_WHEEL_DROP]
-        print '           CENTER_WHEEL_DROP:', d[CENTER_WHEEL_DROP]
-        print '              WALL_IR_SENSOR:', d[WALL_IR_SENSOR]
-        print '                  CLIFF_LEFT:', d[CLIFF_LEFT]
-        print '            CLIFF_FRONT_LEFT:', d[CLIFF_FRONT_LEFT]
-        print '           CLIFF_FRONT_RIGHT:', d[CLIFF_FRONT_RIGHT]
-        print '                 CLIFF_RIGHT:', d[CLIFF_RIGHT]
-        print '                VIRTUAL_WALL:', d[VIRTUAL_WALL]
-        print '      LEFT_WHEEL_OVERCURRENT:', d[LEFT_WHEEL_OVERCURRENT]
-        print '     RIGHT_WHEEL_OVERCURRENT:', d[RIGHT_WHEEL_OVERCURRENT]
-        print '               INFRARED_BYTE:', d[INFRARED_BYTE]
-        print '                 PLAY_BUTTON:', d[PLAY_BUTTON]
-        print '              ADVANCE_BUTTON:', d[ADVANCE_BUTTON]
-        print '                 POSE X (cm):', pose[0]
-        print '                 POSE Y (cm):', pose[1]
-        print '               POSE TH (deg):', pose[2]
-        print '              CHARGING_STATE:', d[CHARGING_STATE]
-        print '                     VOLTAGE:', d[VOLTAGE]
-        print '                     CURRENT:', d[CURRENT]
-        print '                BATTERY_TEMP:', d[BATTERY_TEMP]
-        print '              BATTERY_CHARGE:', d[BATTERY_CHARGE]
-        print '            BATTERY_CAPACITY:', d[BATTERY_CAPACITY]
-        print '                 WALL_SIGNAL:', d[WALL_SIGNAL]
-        print '           CLIFF_LEFT_SIGNAL:', d[CLIFF_LEFT_SIGNAL]
-        print '     CLIFF_FRONT_LEFT_SIGNAL:', d[CLIFF_FRONT_LEFT_SIGNAL]
-        print '    CLIFF_FRONT_RIGHT_SIGNAL:', d[CLIFF_FRONT_RIGHT_SIGNAL]
-        print '          CLIFF_RIGHT_SIGNAL:', d[CLIFF_RIGHT_SIGNAL]
-        print '                     OI_MODE:', d[OI_MODE]
-        print '                 SONG_NUMBER:', d[SONG_NUMBER]
-        print '                SONG_PLAYING:', d[SONG_PLAYING]
-        print '                ENCODER_LEFT:', d[ENCODER_LEFT]
-        print '               ENCODER_RIGHT:', d[ENCODER_RIGHT]
-        print '                   LIGHTBUMP:', d[LIGHTBUMP]
-        print '              LIGHTBUMP_LEFT:', d[LIGHTBUMP_LEFT]
-        print '        LIGHTBUMP_FRONT_LEFT:', d[LIGHTBUMP_FRONT_LEFT]
-        print '       LIGHTBUMP_CENTER_LEFT:', d[LIGHTBUMP_CENTER_LEFT]
-        print '      LIGHTBUMP_CENTER_RIGHT:', d[LIGHTBUMP_CENTER_RIGHT]
-        print '      LIGHTBUMP_CENTER_RIGHT:', d[LIGHTBUMP_CENTER_RIGHT]
-        print '             LIGHTBUMP_RIGHT:', d[LIGHTBUMP_RIGHT]        
-        print '  CHARGING_SOURCES_AVAILABLE:', d[CHARGING_SOURCES_AVAILABLE]
+        self.DUSTBIN.log('                   LEFT_BUMP:', d[LEFT_BUMP])
+        self.DUSTBIN.log('                  RIGHT_BUMP:', d[RIGHT_BUMP])
+        self.DUSTBIN.log('             LEFT_WHEEL_DROP:', d[LEFT_WHEEL_DROP])
+        self.DUSTBIN.log('            RIGHT_WHEEL_DROP:', d[RIGHT_WHEEL_DROP])
+        self.DUSTBIN.log('           CENTER_WHEEL_DROP:', d[CENTER_WHEEL_DROP])
+        self.DUSTBIN.log('              WALL_IR_SENSOR:', d[WALL_IR_SENSOR])
+        self.DUSTBIN.log('                  CLIFF_LEFT:', d[CLIFF_LEFT])
+        self.DUSTBIN.log('            CLIFF_FRONT_LEFT:', d[CLIFF_FRONT_LEFT])
+        self.DUSTBIN.log('           CLIFF_FRONT_RIGHT:', d[CLIFF_FRONT_RIGHT])
+        self.DUSTBIN.log('                 CLIFF_RIGHT:', d[CLIFF_RIGHT])
+        self.DUSTBIN.log('                VIRTUAL_WALL:', d[VIRTUAL_WALL])
+        self.DUSTBIN.log('      LEFT_WHEEL_OVERCURRENT:', d[LEFT_WHEEL_OVERCURRENT])
+        self.DUSTBIN.log('     RIGHT_WHEEL_OVERCURRENT:', d[RIGHT_WHEEL_OVERCURRENT])
+        self.DUSTBIN.log('               INFRARED_BYTE:', d[INFRARED_BYTE])
+        self.DUSTBIN.log('                 PLAY_BUTTON:', d[PLAY_BUTTON])
+        self.DUSTBIN.log('              ADVANCE_BUTTON:', d[ADVANCE_BUTTON])
+        self.DUSTBIN.log('                 POSE X (cm):', pose[0])
+        self.DUSTBIN.log('                 POSE Y (cm):', pose[1])
+        self.DUSTBIN.log('               POSE TH (deg):', pose[2])
+        self.DUSTBIN.log('              CHARGING_STATE:', d[CHARGING_STATE])
+        self.DUSTBIN.log('                     VOLTAGE:', d[VOLTAGE])
+        self.DUSTBIN.log('                     CURRENT:', d[CURRENT])
+        self.DUSTBIN.log('                BATTERY_TEMP:', d[BATTERY_TEMP])
+        self.DUSTBIN.log('              BATTERY_CHARGE:', d[BATTERY_CHARGE])
+        self.DUSTBIN.log('            BATTERY_CAPACITY:', d[BATTERY_CAPACITY])
+        self.DUSTBIN.log('                 WALL_SIGNAL:', d[WALL_SIGNAL])
+        self.DUSTBIN.log('           CLIFF_LEFT_SIGNAL:', d[CLIFF_LEFT_SIGNAL])
+        self.DUSTBIN.log('     CLIFF_FRONT_LEFT_SIGNAL:', d[CLIFF_FRONT_LEFT_SIGNAL])
+        self.DUSTBIN.log('    CLIFF_FRONT_RIGHT_SIGNAL:', d[CLIFF_FRONT_RIGHT_SIGNAL])
+        self.DUSTBIN.log('          CLIFF_RIGHT_SIGNAL:', d[CLIFF_RIGHT_SIGNAL])
+        self.DUSTBIN.log('                     OI_MODE:', d[OI_MODE])
+        self.DUSTBIN.log('                 SONG_NUMBER:', d[SONG_NUMBER])
+        self.DUSTBIN.log('                SONG_PLAYING:', d[SONG_PLAYING])
+        self.DUSTBIN.log('                ENCODER_LEFT:', d[ENCODER_LEFT])
+        self.DUSTBIN.log('               ENCODER_RIGHT:', d[ENCODER_RIGHT])
+        self.DUSTBIN.log('                   LIGHTBUMP:', d[LIGHTBUMP])
+        self.DUSTBIN.log('              LIGHTBUMP_LEFT:', d[LIGHTBUMP_LEFT])
+        self.DUSTBIN.log('        LIGHTBUMP_FRONT_LEFT:', d[LIGHTBUMP_FRONT_LEFT])
+        self.DUSTBIN.log('       LIGHTBUMP_CENTER_LEFT:', d[LIGHTBUMP_CENTER_LEFT])
+        self.DUSTBIN.log('      LIGHTBUMP_CENTER_RIGHT:', d[LIGHTBUMP_CENTER_RIGHT])
+        self.DUSTBIN.log('      LIGHTBUMP_CENTER_RIGHT:', d[LIGHTBUMP_CENTER_RIGHT])
+        self.DUSTBIN.log('             LIGHTBUMP_RIGHT:', d[LIGHTBUMP_RIGHT])        
+        self.DUSTBIN.log('  CHARGING_SOURCES_AVAILABLE:', d[CHARGING_SOURCES_AVAILABLE])
         return d
     
     def _readSensorList(self, sensor_data_list, r):
@@ -1241,7 +1245,7 @@ class Create:
         """
         
         if len(sensor_data_list) == 0:
-            print 'No data was read in _readSensorList.'
+            self.DUSTBIN.log('No data was read in _readSensorList.')
             return self.sensord
         
         sensorDataInterpreter = [ None, # 0
@@ -1311,12 +1315,12 @@ class Create:
             
             if (width == 1):
                 if startofdata >= len(r):
-                    print "Incomplete Sensor Packet"
+                    self.DUSTBIN.log("Incomplete Sensor Packet")
                     break
                 else: interpretedData = dataGetter(r[startofdata])
             if (width == 2):
                 if startofdata >= len(r) - 1:
-                    print "Incomplete Sensor Packet"
+                    self.DUSTBIN.log("Incomplete Sensor Packet")
                     break
                 else: interpretedData = dataGetter(r[startofdata], r[startofdata+1] )
                 
@@ -1431,8 +1435,8 @@ class Create:
         elif baudrate == 57600: baudcode = 10
         elif baudrate == 115200: baudcode = 11
         else:
-            print 'The baudrate of', baudrate, 'in _setBaudRate'
-            print 'was not recognized. Not sending anything.'
+            self.DUSTBIN.log('The baudrate of', baudrate, 'in _setBaudRate')
+            self.DUSTBIN.log('was not recognized. Not sending anything.')
             return
         # otherwise, send off the message
         self._write( START )

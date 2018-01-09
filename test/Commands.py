@@ -15,7 +15,7 @@ class Commands :
     @staticmethod
     def checkHearingCommand(testCase) :
         testCase.commands.append('test/canYouHearMe.wav')
-        testCase = incrementEventCount(testCase, Events.YES)
+        testCase = incrementEventCount(testCase, Events.RESPONSE_YES)
         testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
         testCase = incrementEventCount(testCase, Events.HEAR_AUDIO)
         testCase = incrementEventCount(testCase, Events.SPEAK)

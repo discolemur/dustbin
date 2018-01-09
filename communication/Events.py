@@ -5,28 +5,22 @@ Defines global variables representing which events can trigger callbacks.
 """
 
 import uuid
+from abc import ABCMeta, abstractmethod
 
 class Events :
     class EventListener :
-        def __init__(self, event, callback=None) :
-            self._event = event
+        __metaclass__ = ABCMeta
+        def __init__(self) :
             self._hash = str(uuid.uuid4())
             self.callCount = 0
-            self._callback = callback
-        def setCallback(self, callback) :
-            self._callback = callback
-        def getEvent(self) :
-            return self._event
         def getHash(self) :
             return self._hash
-        def runCallback(self, params=None) :
+        @abstractmethod
+        def callback(self, kwargs) :
+            pass
+        def runCallback(self, kwargs) :
             self.callCount += 1
-            if self._callback is None :
-                return None
-            if (params != None) :
-                self._callback(params)
-            else :
-                self._callback()
+            self.callback(kwargs)
     def __init__(self) :
         raise Exception('You can\'t create an instance of this class.\nIt is meant to only contain static constants which represent events that you can subscribe listeners to.')
 
@@ -42,8 +36,8 @@ class Events :
     GO_WAIT              = 9
     INTRODUCE_ROBOT      = 10
     GREETINGS            = 11
-    YES                  = 12
-    NO                   = 13
+    HEARD_YES            = 12
+    HEARD_NO             = 13
     REQ_FIND_PERSON      = 14
     REQ_FIND_OBJECT      = 15
     PERSON_FOUND         = 16
@@ -54,6 +48,9 @@ class Events :
     UNDERSTAND_MSG       = 21
     RECEIVE_TEXT         = 22
     SPEAK                = 23
+    RESPONSE_NO          = 24
+    RESPONSE_YES         = 25
 
-    KEYS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
-    NEXT_KEY             = 24
+
+    _NEXT_KEY             = 26
+    KEYS = range(0, _NEXT_KEY)

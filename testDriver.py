@@ -19,87 +19,91 @@ from test.TestCase import TestCase
 VERBOSE = False
 SILENT = True
 
+AUDIO_TIMEOUT = 4
+
 passing = 0
 failing = 0
-
-def getTestCase(title) :
-    return TestCase(title, VERBOSE, SILENT, Dustbin)
+failMessages = ''
 
 def testShutdown() :
     title = 'Test Shutdown'
-    return getTestCase(title) \
+    return TestCase(title) \
         .addCommand(Commands.shutdownCommand)
 
 def testHello() :
     title = 'Test Hello'
-    return getTestCase(title) \
+    return TestCase(title) \
         .addCommand(Commands.helloCommand)
 
 def testHelloGoodbye() :
     title = 'Test Hello then Shutdown'
-    return getTestCase(title) \
+    return TestCase(title) \
         .addCommand(Commands.helloCommand) \
         .addCommand(Commands.shutdownCommand)
 
 def testFollowMe() :
     title = 'Test follow me'
-    return getTestCase(title) \
+    return TestCase(title) \
         .addCommand(Commands.followMeCommand)
 
-def testFindMe() :
+def testFindPerson() :
     title = 'Test find person'
-    return getTestCase(title) \
+    return TestCase(title) \
         .addCommand(Commands.findPersonCommand)
 
 def testFindObject() :
     title = 'Test find object'
-    return getTestCase(title) \
+    return TestCase(title) \
         .addCommand(Commands.findObjectCommand)
 
 def testIdentifyPerson() :
     title = 'Test identify person'
-    return getTestCase(title) \
+    return TestCase(title) \
         .addCommand(Commands.identifyPersonCommand)
 
 def testIdentifyObject() :
     title = 'Test identify object'
-    return getTestCase(title) \
+    return TestCase(title) \
         .addCommand(Commands.identifyObjectCommand)
 
 def testIntroduction() :
     title = 'Test introduction'
-    return getTestCase(title) \
+    return TestCase(title) \
         .addCommand(Commands.introductionCommand)
 
 def testUnknown() :
     title = 'Test unknown command'
-    return getTestCase(title) \
+    return TestCase(title) \
         .addCommand(Commands.unknownCommand)
 
 def testCheckHearing() :
     title = 'Test check hearing'
-    return getTestCase(title) \
+    return TestCase(title) \
         .addCommand(Commands.checkHearingCommand)
 
 def testWait() :
     title = 'Test unknown command'
     params = {'preposition':'by', 'obj':'the door'}
-    return getTestCase(title) \
+    return TestCase(title) \
         .addCommand(Commands.waitCommand, params)
 
 def report() :
     sys.stdout.write('      Test Results:\033[92m %d passing' %passing)
     if failing :
         sys.stdout.write('\033[91m %d failing' %failing)
+        sys.stdout.write('\033[0m\n')
+        sys.stdout.write(failMessages)
     sys.stdout.write('\033[0m\n')
 
-def handleResult(success) :
+def handleResult(success, message) :
     global passing
     global failing
+    global failMessages
     if success :
         passing += 1
     else :
         failing += 1
+        failMessages = failMessages + message + '\n'
 
 def main() :
     global passing
@@ -109,7 +113,7 @@ def main() :
         testShutdown(),
         testHelloGoodbye(),
         testFollowMe(),
-        testFindMe(),
+        testFindPerson(),
         testFindObject(),
         testIdentifyObject(),
         testIdentifyPerson(),
@@ -118,8 +122,13 @@ def main() :
         testCheckHearing(),
         testWait()
     ]
+    dustbin = Dustbin(None, AUDIO_TIMEOUT, VERBOSE, SILENT)
     for testCase in tests :
-        testCase.runTest(handleResult)
+        testCase.runTest(dustbin, handleResult)
+        if not dustbin.keepGoing :
+            dustbin = Dustbin(None, AUDIO_TIMEOUT, VERBOSE, SILENT)
+    if dustbin.keepGoing :
+        dustbin.done()
     report()
     if failing :
         return 1

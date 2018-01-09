@@ -22,34 +22,38 @@ class Switchboard :
     def stop(self) :
         self.DUSTBIN.log('ENDING SWITCHBOARD THREAD')
         self.hasStuff.release()
-    def unsubscribe(self, listener) :
+    def unsubscribe(self, event, listener) :
         mutex.acquire()
-        if listener.getEvent() in self.switchboard \
-          and listener.getHash() in self.switchboard[listener.getEvent()] :
-            del self.switchboard[listener.getEvent()][listener.getHash()]
+        if listener.getHash() in self.switchboard[event] :
+            del self.switchboard[event][listener.getHash()]
         mutex.release()
-    def subscribe(self, listener) :
+    def subscribe(self, event, listener, callback=None) :
         mutex.acquire()
-        #self.DUSTBIN.log('Setting callback to event %d' %listener.getEvent())
-        self.switchboard[listener.getEvent()][listener.getHash()] = listener
+        self.DUSTBIN.log('Setting callback to event %d' %event)
+        self.switchboard[event][listener.getHash()] = listener
+        if callback is not None :
+            callback()
         mutex.release()
     def _handleEvents(self) :
         while not self.toTrigger.empty() :
             self.hasStuff.acquire()
-            event, params = self.toTrigger.get(False)
+            event, kwargs = self.toTrigger.get(False)
             self.DUSTBIN.log("Event %d triggered." %event)
             mutex.acquire()
             for listener in self.switchboard[event].values() :
                 try :
-                    listener.runCallback(params)
+                    listener.runCallback(kwargs)
                 except Exception as e :
                     # Program should not die.
                     self.DUSTBIN.log(e.message)
                     continue
             mutex.release()
     def run(self) :
-        while self.DUSTBIN.keepGoing :
-            self._handleEvents()
-    def runTrigger(self, event, params=None) :
-        self.toTrigger.put((event, params))
+        try :
+            while self.DUSTBIN.keepGoing :
+                self._handleEvents()
+        except :
+            self.DUSTBIN.log('Switchboard process had a fatal error.')
+    def runTrigger(self, event, kwargs) :
+        self.toTrigger.put((event, kwargs))
         self.hasStuff.release()

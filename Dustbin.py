@@ -33,23 +33,32 @@ def internet(host="8.8.8.8", port=53, timeout=3):
 
 class Dustbin :
     def __init__(self, logfh, audio_timeout, verbose, silent) :
-        self.initVars(logfh, verbose, silent)
-        # First need a switchboard for subscription
-        self.switchboard = Switchboard(self)
-        self.switchboardThread = Thread(target = self.switchboard.run)
-        self.switchboardThread.start()
-        # Then need a communicator
-        self.com = Communicator(audio_timeout, self)
-        # Finally can add a robot
-        self.robot = Robot(self)
-        self.robotThread = Thread(target = self.robot.run)
-        self.robotThread.start()
-        self.vision = Vision(self)
-        self.visionThread = Thread(target = self.vision.run)
-        self.visionThread.start()
-        # End by subscribing to shutdown
-        ShutdownListener = Events.EventListener(Events.REQ_SHUTDOWN, self.done)
-        self.subscribe(ShutdownListener)
+        try :
+            self.initVars(logfh, verbose, silent)
+            # First need a switchboard for subscription
+            self.switchboard = Switchboard(self)
+            self.switchboardThread = Thread(target = self.switchboard.run)
+            self.switchboardThread.start()
+            # Then need a communicator
+            self.com = Communicator(audio_timeout, self)
+            # Finally can add a robot
+            self.robot = Robot(self)
+            self.robotThread = Thread(target = self.robot.run)
+            self.robotThread.start()
+            self.vision = Vision(self)
+            self.visionThread = Thread(target = self.vision.run)
+            self.visionThread.start()
+            # End by subscribing to shutdown
+            this = self
+            class ShutdownListener(Events.EventListener) :
+                def callback(self, kwargs) :
+                    return this.done()
+            self.shutdownListener = ShutdownListener()
+            self.subscribe(Events.REQ_SHUTDOWN, self.shutdownListener)
+        except Exception as e :
+            print 'FATAL ERROR OCCURRED DURING SETUP!' , e
+            self.done()
+            exit(1)
     def initVars(self, logfh, verbose, silent) :
         self.keepGoing = True
         self._REFRESH_RATE = 60
@@ -61,7 +70,10 @@ class Dustbin :
         self._logTime = time()
         self._hasInternet = internet()
 
-    def log(self, message) :
+    def log(self, *msgs) :
+        message = ''
+        for msg in msgs :
+            message = message +  ' ' + str(msg)
         self.logLock.acquire()
         if self.VERBOSE :
             print(message)
@@ -69,16 +81,25 @@ class Dustbin :
             self._logfh.write(message)
             self._logfh.write('\n')
         self.logLock.release()
-    def subscribe(self, listener) :
-        self.switchboard.subscribe(listener)
-    def trigger(self, event, params=None) :
-        self.switchboard.runTrigger(event, params)
+    def subscribe(self, listener, callback=None) :
+        self.switchboard.subscribe(listener, callback)
+    def trigger(self, event, **kwargs) :
+        self.switchboard.runTrigger(event, kwargs)
     def done(self) :
         self.keepGoing = False
         # NEVER REMOVE THIS LINE! Somehow, it is necessary.
-        self.switchboard.stop()
-        self.robot.stop()
-        self.vision.stop()
+        if hasattr(self, 'switchboard') and self.switchboard is not None :
+            self.switchboard.stop()
+        if hasattr(self, 'robot') and self.robot is not None:
+            self.robot.end()
+        if hasattr(self, 'vision') and self.vision is not None :
+            self.vision.stop()
+        if hasattr(self, 'robotThread') and self.robotThread is not None :
+            self.robotThread.join()
+        if hasattr(self, 'switchboardThread') and self.switchboardThread is not None :
+            self.switchboardThread.join()
+        if hasattr(self, 'visionThread') and self.visionThread is not None :
+            self.visionThread.join()
     def runCommands(self, commands, callback) :
         self.callback = callback
         for command in commands :
@@ -87,15 +108,18 @@ class Dustbin :
             else :
                 self.com.interpretText(command)
             sleep(0.5)
-        # Yes, we need to do this more than once or it won't work.
-        self.done()
         if self.callback is not None :
             self.callback()
     def run(self) :
-        while self.keepGoing :
-            response = self.com.interpretAudio()
-            sleep(0.5)
-        self.done()
+        try :
+            while self.keepGoing :
+                response = self.com.interpretAudio()
+                sleep(0.5)
+            self.done()
+        except :
+            self.log('Dustbin process had fatal error.')
+            self.done()
+            exit(1)
     def hasInternet(self) :
         # After REFRESH_RATE seconds, should check again for internet connection
         if (time() - self._logTime) > self._REFRESH_RATE :

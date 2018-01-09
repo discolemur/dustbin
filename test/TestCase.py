@@ -1,13 +1,14 @@
 from communication.Events import Events
 import sys
 
-AUDIO_TIMEOUT = 4
-
-def subscribeListeners(dustbin, callback) :
+def subscribeListeners(dustbin, _callback) :
     listeners = {}
     for key in Events.KEYS :
-        listener = Events.EventListener(key, callback)
-        dustbin.subscribe(listener)
+        class SpecialListener(Events.EventListener) :
+            def callback(self, kwargs) :
+                return _callback()
+        listener = SpecialListener()
+        dustbin.subscribe(key, listener)
         listeners[key] = listener
     return listeners
 
@@ -15,13 +16,10 @@ class TestCase :
 
     lock = None
 
-    def __init__(self, title, verbose, silent, DustbinClass) :
+    def __init__(self, title) :
         self.title = title
         self.commands = []
         self.eventCallCount = {}
-        self.VERBOSE = verbose
-        self.SILENT = silent
-        self.Dustbin = DustbinClass
         self.success = True
         self.message = self.title
 
@@ -76,12 +74,11 @@ class TestCase :
             TestCase.reportSuccess(self.message)
         else :
             TestCase.reportFailure(self.message)
-        self.callback(self.success)
+        self.callback(self.success, self.message)
 
-    def runTest(self, callback) :
+    def runTest(self, dustbin, callback) :
         if TestCase.lock is not None and self.title not in TestCase.lock :
             return
         self.callback = callback
-        dustbin = self.Dustbin(None, AUDIO_TIMEOUT, self.VERBOSE, self.SILENT)
         self.listeners = subscribeListeners(dustbin, self.assertHasNonEmptyParam)
         dustbin.runCommands(self.commands, self._finish)

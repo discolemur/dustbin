@@ -27,7 +27,10 @@ def getLogfile() :
 def main(timeout, verbose, silent) :
     fh = open(getLogfile(), 'w')
     dustbin = Dustbin(fh, timeout, verbose, silent)
-    dustbin.run()
+    try :
+        dustbin.run()
+    except :
+        dustbin.log('Error occurred. Program died.')
     fh.close()
 
 if __name__ == '__main__':
