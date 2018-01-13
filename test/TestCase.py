@@ -1,16 +1,9 @@
 from communication.Events import Events
 import sys
 
-def subscribeListeners(dustbin, _callback) :
-    listeners = {}
-    for key in Events.KEYS :
-        class SpecialListener(Events.EventListener) :
-            def callback(self, kwargs) :
-                return _callback()
-        listener = SpecialListener()
-        dustbin.subscribe(key, listener)
-        listeners[key] = listener
-    return listeners
+class SpecialListener(Events.EventListener) :
+    def callback(self, kwargs) :
+        return self.container.assertHasNonEmptyParam(kwargs)
 
 class TestCase :
 
@@ -42,10 +35,11 @@ class TestCase :
         if params is None :
             return
         for key in params.keys() :
-            if len(params[key]) > 0 :
+            length = len(str(params[key]))
+            if length > 0 :
                 return
-        self.success = False
-        self.message = self.message + ': ' + 'param %s is empty.' %key
+            self.success = False
+            self.message = self.message + ': ' + 'param %s is empty.' %key
 
 
     def addCommand(self, commandFunction, params=None) :
@@ -76,9 +70,21 @@ class TestCase :
             TestCase.reportFailure(self.message)
         self.callback(self.success, self.message)
 
-    def runTest(self, dustbin, callback) :
+    def subscribeListeners(self, dustbin) :
+        listeners = {}
+        for key in Events.KEYS :
+            listener = SpecialListener(self)
+            dustbin.subscribe(key, listener)
+            listeners[key] = listener
+        return listeners
+
+    def shouldRun(self) :
         if TestCase.lock is not None and self.title not in TestCase.lock :
-            return
+            return False
+        return True
+
+    def runTest(self, dustbin, callback) :
+        print '%s> Running test: %s' %('='*20 ,self.title)
         self.callback = callback
-        self.listeners = subscribeListeners(dustbin, self.assertHasNonEmptyParam)
+        self.listeners = self.subscribeListeners(dustbin)
         dustbin.runCommands(self.commands, self._finish)

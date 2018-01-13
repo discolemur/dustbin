@@ -3,6 +3,7 @@
 from Dustbin import Dustbin
 from glob import glob
 from time import time
+from threading import Lock
 import os
 
 # Number of log files to keep.
@@ -24,14 +25,32 @@ def getLogfile() :
         removeOneLogfile(files)
     return filename
 
+class Logger :
+    def __init__(self, verbose, fh) :
+        self.logLock = Lock()
+        self.verbose = verbose
+        self._logfh = fh
+    def log(self, *msgs) :
+        message = ''
+        for msg in msgs :
+            message = message +  ' ' + str(msg)
+        self.logLock.acquire()
+        if self.verbose :
+            print(message)
+        if self._logfh is not None :
+            self._logfh.write(message)
+            self._logfh.write('\n')
+        self.logLock.release()
+
 def main(timeout, verbose, silent) :
-    fh = open(getLogfile(), 'w')
-    dustbin = Dustbin(fh, timeout, verbose, silent)
+    _logfh = open(getLogfile(), 'w')
+    logger = Logger(verbose, _logfh)
+    dustbin = Dustbin(logger, timeout, silent)
     try :
         dustbin.run()
     except :
         dustbin.log('Error occurred. Program died.')
-    fh.close()
+    _logfh.close()
 
 if __name__ == '__main__':
     from argparse import ArgumentParser

@@ -20,6 +20,20 @@
 #   2. Adjusted the size of the Roomba in WHEEL_SPAN
 #   3. getPose seems to be broken.
 
+class PLACEHOLDER() :
+    def __init__(self, verbose=True, fh=None) :
+        self.verbose = verbose
+        self._logfh = fh
+    def log(self, *msgs) :
+        message = ''
+        for msg in msgs :
+            message = message +  ' ' + str(msg)
+        if self.verbose :
+            print(message)
+        if self._logfh is not None :
+            self._logfh.write(message)
+            self._logfh.write('\n')
+
 import serial
 import math
 import time
@@ -144,7 +158,7 @@ def modeStr( mode ):
     if mode == PASSIVE_MODE: return 'PASSIVE_MODE'
     if mode == SAFE_MODE: return 'SAFE_MODE'
     if mode == FULL_MODE: return 'FULL_MODE'
-    self.DUSTBIN.log('Warning: unknown mode', mode, 'seen in modeStr')
+    print('Warning: unknown mode', mode, 'seen in modeStr')
     return 'UNKNOWN_MODE'
 
 #
@@ -152,16 +166,16 @@ def modeStr( mode ):
 #
 def _bytesOfR( r ):
     """ for looking at the raw bytes of a sensor reply, r """
-    self.DUSTBIN.log('raw r is', r)
+    print('raw r is', r)
     for i in range(len(r)):
-        self.DUSTBIN.log('byte', i, 'is', ord(r[i]))
-    self.DUSTBIN.log('finished with formatR')
+        print('byte', i, 'is', ord(r[i]))
+    print('finished with formatR')
 
 def _bitOfByte( bit, byte ):
     """ returns a 0 or 1: the value of the 'bit' of 'byte' """
     if bit < 0 or bit > 7:
-        self.DUSTBIN.log('Your bit of', bit, 'is out of range (0-7)')
-        self.DUSTBIN.log('returning 0')
+        print('Your bit of', bit, 'is out of range (0-7)')
+        print('returning 0')
         return 0
     return ((byte >> bit) & 0x01)
 
@@ -440,11 +454,13 @@ class Create:
     if it's not attached!
     """
     # to do: check if we can start in other modes...
-    def __init__(self, dustbin, PORT, BAUD_RATE=115200, startingMode=SAFE_MODE):
-        self.DUSTBIN = dustbin
+    def __init__(self, PORT="/dev/ttyUSB0", BAUD_RATE=115200, startingMode=SAFE_MODE, dustbin=None):
         """ the constructor which tries to open the
         connection to the robot at port PORT
         """
+        self.DUSTBIN = dustbin
+        if self.DUSTBIN is None :
+            self.DUSTBIN = PLACEHOLDER()
         _debug = False
         # to do: find the shortest safe serial timeout value...
         # to do: use the timeout to do more error checking than

@@ -2,6 +2,18 @@ from threading import Lock
 from communication.Events import Events
 from machine_learning import Objects
 
+class FindObjectListener(Events.EventListener) :
+    def callback(self, kwargs) :
+        return self.container._handleFindObject(kwargs['obj'])
+class IdentifyObjectListener(Events.EventListener) :
+    def callback(self, kwargs) :
+        return self.container._handleIdentifyObject(kwargs['obj'])
+class FindPersonListener(Events.EventListener) :
+    def callback(self, kwargs) :
+        return self.container._handleFindPerson(kwargs['person'])
+class IdentifyPersonListener(Events.EventListener) :
+    def callback(self, kwargs) :
+        return self.container._handleIdentifyPerson(kwargs['pronoun'])
 
 class Vision :
     def __init__(self, dustbin) :
@@ -31,23 +43,10 @@ class Vision :
 
     ''' METHODS '''
     def _subscribeListeners(self) :
-        this = self
-        class FindObjectListener(Events.EventListener) :
-            def callback(self, kwargs) :
-                return this._handleFindObject(kwargs['obj'])
-        class IdentifyObjectListener(Events.EventListener) :
-            def callback(self, kwargs) :
-                return this._handleIdentifyObject(kwargs['obj'])
-        class FindPersonListener(Events.EventListener) :
-            def callback(self, kwargs) :
-                return this._handleFindPerson(kwargs['person'])
-        class IdentifyPersonListener(Events.EventListener) :
-            def callback(self, kwargs) :
-                return this._handleIdentifyPerson(kwargs['pronoun'])
-        self.FOL = FindObjectListener()
-        self.IOL = IdentifyObjectListener()
-        self.FPL = FindPersonListener()
-        self.IPL = IdentifyPersonListener()
+        self.FOL = FindObjectListener(self)
+        self.IOL = IdentifyObjectListener(self)
+        self.FPL = FindPersonListener(self)
+        self.IPL = IdentifyPersonListener(self)
         self.DUSTBIN.subscribe(Events.REQ_FIND_OBJECT, self.FOL)
         self.DUSTBIN.subscribe(Events.REQ_IDENTIFY_OBJECT, self.IOL)
         self.DUSTBIN.subscribe(Events.REQ_FIND_PERSON, self.FPL)
@@ -58,8 +57,10 @@ class Vision :
     def run(self) :
         try :
             while self.DUSTBIN.keepGoing :
+                self.DUSTBIN.log('Vision process continues.')
                 self.actMutex.acquire()
-                self.DUSTBIN.log('Still going.')
-        except :
-            self.DUSTBIN.log('Vision process had fatal error.')
+        except Exception as e :
+            self.DUSTBIN.log('Vision process had fatal error.', e)
+            print('Vision process had fatal error.', e)
+        self.DUSTBIN.log('VISION OFFICIALLY DEAD.')
 

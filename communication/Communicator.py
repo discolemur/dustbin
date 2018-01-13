@@ -25,18 +25,18 @@ ORIGINAL:    pcm.{cardname} cards.pcm.{cardname}
 NEW:         pcm.{cardname} cards.pcm.default
 """
 
+class SpeakListener(Events.EventListener) :
+    def callback(self, kwargs) :
+        if ('response' not in kwargs) :
+            return None
+        return self.container.speak(kwargs)
+
 class Communicator :
     def __init__(self, audio_timeout, dustbin) :
         self.speaker = SpeechEngine(dustbin.log, dustbin.hasInternet)
         self.audioHandler = AudioHandler(audio_timeout)
         self.DUSTBIN = dustbin
-        this = self
-        class SpeakListener(Events.EventListener) :
-            def callback(self, kwargs) :
-                if ('message' not in kwargs) :
-                    return None
-                return this.speak(kwargs)
-        self.speakListener = SpeakListener()
+        self.speakListener = SpeakListener(self)
         self.DUSTBIN.subscribe(Events.SPEAK, self.speakListener)
     
     def _detect_intent_text(self, text):
@@ -89,37 +89,64 @@ class Communicator :
         self.DUSTBIN.trigger(Events.HEAR_AUDIO)
         return response
 
-    # REQUIRED ARGS: 'message'=string
+    # REQUIRED ARGS: 'response'=string
     def speak(self, kwargs) :
         if self.DUSTBIN.silent :
-            self.DUSTBIN.logLock.acquire()
+            self.DUSTBIN.getLogLock().acquire()
             # Keep this print.
-            print kwargs['message']
-            self.DUSTBIN.logLock.release()
+            print kwargs['response']
+            self.DUSTBIN.getLogLock().release()
         else :
-            self.speaker.say(kwargs['message'])
+            self.speaker.say(kwargs['response'])
 
     def _handleAction(self, response) :
         result = response.query_result
         action = result.action
-        if len(result.fulfillment_text) > 0 :
-            msg = result.fulfillment_text
-            self.DUSTBIN.trigger(Events.SPEAK, message=msg)
+        response_msg = result.fulfillment_text
+        query_msg = result.query_text
+
+        # BASIC COMMUNICATION STATES
+        if len(response_msg) > 0 :
+            self.DUSTBIN.trigger(Events.SPEAK, query=query_msg, response=response_msg, action=action)
         if action == 'input.unknown' :
-            self.DUSTBIN.trigger(Events.NOT_UNDERSTAND_MSG)
+            self.DUSTBIN.trigger(Events.NOT_UNDERSTAND_MSG, query=query_msg, response=response_msg, action=action)
             return
-        self.DUSTBIN.trigger(Events.UNDERSTAND_MSG)
+        self.DUSTBIN.trigger(Events.UNDERSTAND_MSG, query=query_msg, response=response_msg, action=action)
         if action == 'system.shutdown' :
             self.DUSTBIN.trigger(Events.REQ_SHUTDOWN)
+
+        # VOICE and LANGUAGE COMMUNICATION
         if action == 'introduction' :
             self.DUSTBIN.trigger(Events.INTRODUCE_ROBOT)
+        if action == 'say.hello' :
+            self.DUSTBIN.trigger(Events.GREETINGS)
+        if action == 'say.no' :
+            self.DUSTBIN.trigger(Events.RESPONSE_NO)
+        if action == 'say.yes' :
+            self.DUSTBIN.trigger(Events.RESPONSE_YES)       
+        if action == 'heard.yes' :
+            self.DUSTBIN.trigger(Events.HEARD_YES)
+        if action == 'heard.no' :
+            self.DUSTBIN.trigger(Events.HEARD_NO)
+
+        # IDENTIFY
         if action == 'identify.person' :
             # TODO make sure we don't trigger until person parameter is resolved (conversation may occur on dialogflow's side)
             pn = result.parameters['pronoun']
             self.DUSTBIN.trigger(Events.REQ_IDENTIFY_PERSON, pronoun=pn)
+        if action == 'identify.object' :
+            obj = result.parameters['object']
+            self.DUSTBIN.trigger(Events.REQ_IDENTIFY_OBJECT, obj=obj)
+
+        # FIND
         if action == 'find.person' :
             person = list(result.parameters['person'].values())[0]
             self.DUSTBIN.trigger(Events.REQ_FIND_PERSON, person=person)
+        if action == 'find.object' :
+            obj = result.parameters['object']
+            self.DUSTBIN.trigger(Events.REQ_FIND_OBJECT, obj=obj)
+
+        # GO
         if action == 'go.follow' :
             person = list(result.parameters['person'].values())[0]
             self.DUSTBIN.trigger(Events.REQ_FOLLOW, person=person)
@@ -127,22 +154,14 @@ class Communicator :
             obj = result.parameters['object']
             prep = result.parameters['preposition']
             self.DUSTBIN.trigger(Events.GO_WAIT, obj=obj, preposition=prep)
-        if action == 'say.hello' :
-            self.DUSTBIN.trigger(Events.GREETINGS)
-        if action == 'heard.yes' :
-            self.DUSTBIN.trigger(Events.HEARD_YES)
-        if action == 'heard.no' :
-            self.DUSTBIN.trigger(Events.HEARD_NO)
-        if action == 'say.no' :
-            self.DUSTBIN.trigger(Events.RESPONSE_NO)
-        if action == 'say.yes' :
-            self.DUSTBIN.trigger(Events.RESPONSE_YES)
-        if action == 'identify.object' :
-            obj = result.parameters['object']
-            self.DUSTBIN.trigger(Events.REQ_IDENTIFY_OBJECT, obj=obj)
-        if action == 'find.object' :
-            obj = result.parameters['object']
-            self.DUSTBIN.trigger(Events.REQ_FIND_OBJECT, obj=obj)
+
+        # MOVEMENT TRICKS
+        if action == 'do.figure_eight' :
+            self.DUSTBIN.trigger(Events.REQ_FIGURE_EIGHT)
+        if action == 'do.spin' :
+            self.DUSTBIN.trigger(Events.REQ_SPIN, dps=80, times=1, reversed=True)
+        if action == 'do.wiggle' :
+            self.DUSTBIN.trigger(Events.REQ_WIGGLE)
     
     def interpretText(self, text) :
         response = None

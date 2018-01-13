@@ -115,3 +115,31 @@ class Commands :
         testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
         testCase = incrementEventCount(testCase, Events.SPEAK)
         return testCase
+
+    @staticmethod
+    def wiggleCommand(testCase) :
+        testCase.commands.append("wiggle")
+        testCase = incrementEventCount(testCase, Events.REQ_WIGGLE)
+        testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
+        testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
+        testCase = incrementEventCount(testCase, Events.SPEAK)
+        return testCase
+
+    @staticmethod
+    def figureEightCommand(testCase) :
+        testCase.commands.append("Do a figure eight.")
+        testCase = incrementEventCount(testCase, Events.REQ_FIGURE_EIGHT)
+        testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
+        testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
+        testCase = incrementEventCount(testCase, Events.SPEAK)
+        return testCase
+
+    @staticmethod
+    def spinCommand(testCase) :
+        testCase.commands.append("Spin around")
+        testCase = incrementEventCount(testCase, Events.REQ_SPIN)
+        testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG)
+        testCase = incrementEventCount(testCase, Events.RECEIVE_TEXT)
+        testCase = incrementEventCount(testCase, Events.SPEAK)
+        return testCase
+

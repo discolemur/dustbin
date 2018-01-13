@@ -10,9 +10,10 @@ from abc import ABCMeta, abstractmethod
 class Events :
     class EventListener :
         __metaclass__ = ABCMeta
-        def __init__(self) :
+        def __init__(self, container) :
             self._hash = str(uuid.uuid4())
             self.callCount = 0
+            self.container = container
         def getHash(self) :
             return self._hash
         @abstractmethod
@@ -50,7 +51,10 @@ class Events :
     SPEAK                = 23
     RESPONSE_NO          = 24
     RESPONSE_YES         = 25
+    REQ_WIGGLE           = 26
+    REQ_FIGURE_EIGHT     = 27
+    REQ_SPIN             = 28
 
 
-    _NEXT_KEY             = 26
+    _NEXT_KEY            = 29
     KEYS = range(0, _NEXT_KEY)

@@ -8,6 +8,8 @@ from communication.Events import Events
 from test.Commands import Commands
 from test.TestCase import TestCase
 
+from main import Logger
+
 '''
     TEST EVENT HANDLING
         1) Set the robot to interpret text mode,
@@ -82,18 +84,33 @@ def testCheckHearing() :
         .addCommand(Commands.checkHearingCommand)
 
 def testWait() :
-    title = 'Test unknown command'
+    title = 'Test wait command'
     params = {'preposition':'by', 'obj':'the door'}
     return TestCase(title) \
         .addCommand(Commands.waitCommand, params)
 
-def report() :
-    sys.stdout.write('      Test Results:\033[92m %d passing' %passing)
+def testSpin() :
+    title = 'Test spin'
+    return TestCase(title) \
+        .addCommand(Commands.spinCommand)
+def testWiggle() :
+    title = 'Test wiggle'
+    return TestCase(title) \
+        .addCommand(Commands.wiggleCommand)
+def testFigureEight() :
+    title = 'Test figure eight'
+    return TestCase(title) \
+        .addCommand(Commands.figureEightCommand)
+
+def report(dustbin) :
+    message = '      Test Results:\033[92m %d passing' %passing
     if failing :
-        sys.stdout.write('\033[91m %d failing' %failing)
-        sys.stdout.write('\033[0m\n')
-        sys.stdout.write(failMessages)
-    sys.stdout.write('\033[0m\n')
+        message = message + '\033[91m %d failing' %failing
+        message = message + '\033[0m\n'
+        message = message + failMessages
+    message = message + '\033[0m\n'
+    dustbin.log(message)
+    sys.stdout.write(message)
 
 def handleResult(success, message) :
     global passing
@@ -120,16 +137,24 @@ def main() :
         testIntroduction(),
         testUnknown(),
         testCheckHearing(),
-        testWait()
+        testWait(),
+        testSpin(),
+        testFigureEight(),
+        testWiggle()
     ]
-    dustbin = Dustbin(None, AUDIO_TIMEOUT, VERBOSE, SILENT)
+    fh = open('logs/latestTest.log', 'w')
+    logger = Logger(VERBOSE, fh)
+    dustbin = Dustbin(logger, AUDIO_TIMEOUT, SILENT)
     for testCase in tests :
-        testCase.runTest(dustbin, handleResult)
-        if not dustbin.keepGoing :
-            dustbin = Dustbin(None, AUDIO_TIMEOUT, VERBOSE, SILENT)
+        if testCase.shouldRun() :
+            if not dustbin.keepGoing :
+                dustbin = Dustbin(logger, AUDIO_TIMEOUT, SILENT)
+            testCase.runTest(dustbin, handleResult)
     if dustbin.keepGoing :
         dustbin.done()
-    report()
+    report(dustbin)
+    # Do not close it. The program will freeze.
+    #fh.close()
     if failing :
         return 1
     return 0
