@@ -5,7 +5,7 @@ This is just a bogus class: a placeholder for future robot com classes.
 """
 
 from threading import Lock
-import Create
+import CreateHTTP
 import time
 
 ############  ROOMBA CONSTANTS ###########
@@ -24,7 +24,7 @@ class Robot :
         self.DUSTBIN = dustbin
         self.keepGoing = True
         try :
-            self.roomba = Create.Create(ROOMBA_PORT, BAUD_RATE, Create.SAFE_MODE, dustbin)
+            self.roomba = CreateHTTP.Create(ROOMBA_PORT, BAUD_RATE, CreateHTTP.SAFE_MODE, dustbin)
             self.roomba.resetPose()
             px, py, th = self.roomba.getPose() # Use this method to access location data
         except :
