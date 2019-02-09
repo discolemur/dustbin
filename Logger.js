@@ -17,9 +17,9 @@ class Logger {
     fs.unlink(files.sort()[0]);
   }
   getLogfile(callback) {
-    const logDir = '/home/nick/code/robot/dustbin/logs';
+    const logDir = __dirname + '/logs';
     if (!fs.existsSync(logDir)) {
-      fs.mkdirSync(logDir);
+      fs.mkdirSync(logDir, err => {});
     }
     const filename = `${logDir}/${Date.now()}.log`;
     const files = glob.sync(`${logDir}/*.log`);
