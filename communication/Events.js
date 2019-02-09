@@ -56,7 +56,14 @@ const Events = {
   _NEXT_KEY : 29
 };
 
+let EventsByNumber = {};
+for (let event of Object.keys(Events)) {
+  EventsByNumber[Events[event]] = event;
+}
+
+
 module.exports = {
   'Events': Events,
-  'EventListener': EventListener
+  'EventListener': EventListener,
+  'EventsByNumber': EventsByNumber
 };

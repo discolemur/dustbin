@@ -118,8 +118,8 @@ class Dustbin {
     kwargs.event = event;
     this.switchboard.runTrigger(event, kwargs);
   }
-  runCommands(commands, callback) {
-    let promise = Promise.resolve(); 
+  runCommands(commands) {
+    let promise = Promise.resolve();
     for (const command in commands) {
       if (command.indexOf('.wav') != -1) {
         promise = promise.then(()=>this.com.interpretFromWavFile(command));

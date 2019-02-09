@@ -1,10 +1,12 @@
 "use strict";
 
-const { Events, EventListener } = require('../communication/Events.js');
-const AssertionError = require('chai').AssertionError;
+const { Events, EventListener, EventsByNumber } = require('../communication/Events.js');
+const assert = require('chai').assert;
 
 class SpecialListener extends EventListener {
     callback(kwargs) {
+        console.log("Args to listener:");
+        console.log(kwargs);
         return this.container.assertHasNonEmptyParam(kwargs);
     }
 }
@@ -19,16 +21,16 @@ class TestCase {
     }
 
     assertCalled(listeners) {
-        for (let event of listeners) {
+        for (let event of Object.keys(listeners)) {
             if (this.eventCallCount[event] !== undefined) {
-                if (listeners[event].callCount != this.eventCallCount[event]) {
-                    throw new AssertionError('Event %d called %d times, expected %d' %(event, listeners[event].callCount, this.eventCallCount[event]))
-                }
+                assert.equal(listeners[event].callCount,
+                    this.eventCallCount[event],
+                    `Event ${EventsByNumber[event]} called ${listeners[event].callCount} times, expected ${this.eventCallCount[event]}`);
             }
             else {
-                if (listeners[event].callCount != 0) {
-                    throw new AssertionError('Event %d called %d times, expected %d' %(event, listeners[event].callCount, 0))
-                }
+                assert.equal(listeners[event].callCount,
+                    0,
+                    `Event ${event} called ${listeners[event].callCount} times, expected 0`);
             }
         }
     }
@@ -67,13 +69,7 @@ class TestCase {
                 this.success = false;
             }
         }
-        if (this.success) {
-            TestCase.reportSuccess(this.message);
-        }
-        else {
-            TestCase.reportFailure(this.message);
-        }
-        this.callback(this.success, this.message);
+        return {success: this.success, message: this.message};
     }
 
     subscribeListeners(dustbin) {
@@ -86,11 +82,11 @@ class TestCase {
         return listeners;
     }
 
-    runTest(dustbin, callback) {
-        console.log(`${'='*20}> Running test: ${this.title}`);
-        this.callback = callback;
+    runTest(dustbin) {
+        console.log(`${'='.repeat(20)}> Test step: ${this.title}`);
         this.listeners = this.subscribeListeners(dustbin);
-        return dustbin.runCommands(this.commands, this._finish);
+        let self = this;
+        return dustbin.runCommands(this.commands).then(()=>{return self._finish()});
     }
 }
 

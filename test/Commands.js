@@ -6,7 +6,7 @@
 const { Events, EventListener } = require('../communication/Events.js');
 
 function incrementEventCount(testCase, event) {
-    if (testCase.eventCallCount[event] !== undefined) {
+    if (testCase.eventCallCount[event] === undefined) {
         testCase.eventCallCount[event] = 0;
     }
     testCase.eventCallCount[event]++;

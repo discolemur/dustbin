@@ -14,7 +14,7 @@ class Logger {
     this.log('Logger initialized.');
   }
   removeOneLogfile(files) {
-    fs.unlink(files.sort()[0]);
+    fs.unlinkSync(files.sort()[0]);
   }
   getLogfile(callback) {
     const logDir = __dirname + '/logs';

@@ -14,7 +14,7 @@ class Switchboard {
     for (let k of Object.values(Events)) {
       this.switchboard[k] = {};
     }
-    this.toTrigger = new Queue(); 
+    this.toTrigger = new Queue();
     this.DUSTBIN = _DUSTBIN;
     this.keepGoing = true;
   }
