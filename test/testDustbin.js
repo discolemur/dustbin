@@ -32,7 +32,7 @@ describe("Basic commands", () => {
     dustbin.done();
   });
   describe("Hello, Goodbye.", () => {
-    it.only("should say hi.", () => {
+    it("should say hi.", () => {
       const title = 'Test Hello';
       return new TestCase(title)
         .addCommand(Commands.helloCommand)

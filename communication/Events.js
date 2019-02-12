@@ -16,9 +16,11 @@ class EventListener {
     return this._hash;
   }
   callback(kwargs) { }
-  runCallback(kwargs) {
+  async runCallback(kwargs) {
     this.callCount++;
-    this.callback(kwargs);
+    let self = this;
+    await Promise.resolve();
+    return self.callback(kwargs);
   }
 }
 
@@ -83,7 +85,7 @@ class EventEmitter {
     if (this.callbacks[event] === undefined) {
       return;
     }
-    return Promise.all(this.callbacks[event].map(x => ()=>{return x.runCallback(kwargs);}));
+    return Promise.all(this.callbacks[event].map(x => x.runCallback(kwargs)));
   }
 }
 

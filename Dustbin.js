@@ -7,28 +7,24 @@
 
 const { Events, EventListener, EventEmitter } = require('./communication/Events.js');
 const { Communicator, SpeakListener } = require('./communication/Communicator.js');
-const { ShortTermMemory , MessageListener } = require('./memory/ShortTermMemory.js');
+const { ShortTermMemory, MessageListener } = require('./memory/ShortTermMemory.js');
 const Robot = require('./robot/Robot.js');
 
-const {
-  FindObjectListener,
-  IdentifyObjectListener,
-  FindPersonListener,
-  IdentifyPersonListener,
-  Vision
-} = require('./machine_learning/Vision.js');
+const { Vision } = require('./machine_learning/Vision.js');
 
 // from machine_learning.Vision import Vision
 // from threading import Thread
 
-function testInternet(callback) {
-  require('dns').resolve('www.google.com', function (err) {
-    if (err) {
-      callback(false);
-    } else {
-      callback(true);
-    }
-  });
+function _testInternet() {
+  return new Promise(function (resolve, reject) {
+    require('dns').resolve('www.google.com', function (err) {
+      if (err) {
+        reject(false);
+      } else {
+        resolve(true);
+      }
+    });
+  })
 }
 
 class ShutdownListener extends EventListener {
@@ -39,15 +35,13 @@ class ShutdownListener extends EventListener {
 
 class Dustbin {
   constructor(_logger, audio_timeout, silent) {
+    this._lastCheck = Date.now();
     this.logger = _logger;
     this.keepGoing = true;
     this._REFRESH_RATE = 60;
     this.silent = silent;
-    this.switchboard = new EventEmitter;
+    this.switchboard = new EventEmitter();
     try {
-      this._logTime = Date.now();
-      // Checks for internet connection after this amount of time.
-      this._hasInternet = this.hasInternet();
       // # Then need a communicator
       this.com = new Communicator(audio_timeout, this);
       // # Then short term memory
@@ -82,20 +76,25 @@ class Dustbin {
       this.vision.stop();
     this.logger.end();
   }
-  hasInternet() {
+  testInternet() {
     // After REFRESH_RATE seconds, should check again for internet connection
-    if ((Date.now() - this._logTime) > this._REFRESH_RATE) {
+    if ((Date.now() - this._lastCheck) > this._REFRESH_RATE) {
       let self = this;
-      testInternet(i => { self._hasInternet = i });
-      this._logTime = Date.now();
+      _testInternet().then(i => { self._hasInternet = i });
+      this._lastCheck = Date.now();
     }
     return this._hasInternet;
   }
   run() {
     try {
       while (this.keepGoing) {
-        setTimeout(()=>{
-          const response = this.com.interpretAudio();
+        if (!this._hasInternet) {
+          this.testInternet();
+        }
+        setTimeout(() => {
+          this.com.interpretAudio().then(response=>{
+
+          })
           this.log('Listening process continues.');
         }, 500);
       }
@@ -108,18 +107,18 @@ class Dustbin {
       process.exit(1);
     }
   }
-  trigger(event, kwargs) {
+  trigger(event, kwargs = {}) {
     kwargs.event = event;
     this.switchboard.emit(event, kwargs);
   }
   runCommands(commands) {
     let promise = Promise.resolve();
-    for (const command in commands) {
+    for (const command of commands) {
       if (command.indexOf('.wav') != -1) {
-        promise = promise.then(()=>this.com.interpretFromWavFile(command));
+        promise = promise.then(() => {return this.com.interpretFromWavFile(command);});
       }
       else {
-        promise = promise.then(()=>this.com.interpretText(command));
+        promise = promise.then(() => {return this.com.interpretText(command);});
       }
     }
     return promise;

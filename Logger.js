@@ -2,6 +2,7 @@
 
 var fs = require('fs');
 var glob = require('glob');
+var util = require('util');
 
 // Number of log files to keep.
 const LOG_LIMIT = 5
@@ -29,8 +30,16 @@ class Logger {
     return filename;
   }
   log() {
-    for (var i = 0; i < arguments.length; i++) {
-      this.lstream.write(`${arguments[i]}\n`);
+    for (let i = 0; i < arguments.length; i++) {
+      if (Array.isArray(arguments[i])) {
+        this.lstream.write('[');
+        arguments[i].map(x => this.log(x));
+        this.lstream.write(']');
+      } else if (typeof arguments[i] === 'object') {
+        this.lstream.write(util.inspect(arguments[i]));
+      } else {
+        this.lstream.write(`${arguments[i]}\n`);
+      }
       if (this.verbose) {
         console.log(arguments[i]);
       }

@@ -5,8 +5,6 @@ const assert = require('chai').assert;
 
 class SpecialListener extends EventListener {
     callback(kwargs) {
-        console.log("Args to listener:");
-        console.log(kwargs);
         return this.container.assertHasNonEmptyParam(kwargs);
     }
 }
@@ -39,8 +37,8 @@ class TestCase {
         if (!params) {
             return;
         }
-        for (let key of params.keys()) {
-            const length = len(str(params[key]));
+        for (let key of Object.keys(params)) {
+            const length = params[key].toString().length;
             if (length > 0) {
                 return;
             }
@@ -86,7 +84,10 @@ class TestCase {
         console.log(`${'='.repeat(20)}> Test step: ${this.title}`);
         this.listeners = this.subscribeListeners(dustbin);
         let self = this;
-        return dustbin.runCommands(this.commands).then(()=>{return self._finish()});
+        return dustbin.runCommands(this.commands).catch(err=>{
+            console.log(err);
+            this.success = false;
+        }).then(()=>{return self._finish()});
     }
 }
 
