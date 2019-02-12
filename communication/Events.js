@@ -61,9 +61,35 @@ for (let event of Object.keys(Events)) {
   EventsByNumber[Events[event]] = event;
 }
 
+class EventEmitter {
+  constructor() {
+    this.callbacks = {};
+  }
+  /**
+   * Subscribes a listener.
+   * Returns an unsubcribe function.
+   * @param {*} event 
+   * @param {*} listener 
+   */
+  subscribe(event, listener) {
+    if (this.callbacks[event] === undefined) {
+      this.callbacks[event] = []
+    }
+    this.callbacks[event].push(listener)
+    let self = this;
+    return ()=>{self.callbacks[event] = self.callback[event].filter(x => x != listener)};
+  }
+  emit(event, kwargs = null) {
+    if (this.callbacks[event] === undefined) {
+      return;
+    }
+    return Promise.all(this.callbacks[event].map(x => ()=>{return x.runCallback(kwargs);}));
+  }
+}
 
 module.exports = {
   'Events': Events,
   'EventListener': EventListener,
-  'EventsByNumber': EventsByNumber
+  'EventsByNumber': EventsByNumber,
+  'EventEmitter': EventEmitter
 };

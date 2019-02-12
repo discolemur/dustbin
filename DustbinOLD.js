@@ -1,11 +1,12 @@
 'use strict';
 /*
   Dustbin Class
-    Connects all other components.
+    Contains the main switchboard for the project, connecting all other components.
     Holds global variables and global methods.
 */
 
-const { Events, EventListener, EventEmitter } = require('./communication/Events.js');
+const Switchboard = require('./communication/Switchboard.js');
+const { Events, EventListener } = require('./communication/Events.js');
 const { Communicator, SpeakListener } = require('./communication/Communicator.js');
 const { ShortTermMemory , MessageListener } = require('./memory/ShortTermMemory.js');
 const Robot = require('./robot/Robot.js');
@@ -32,7 +33,7 @@ function testInternet(callback) {
 }
 
 class ShutdownListener extends EventListener {
-  callback() {
+  callback(kwargs) {
     return this.container.done()
   }
 }
@@ -43,11 +44,14 @@ class Dustbin {
     this.keepGoing = true;
     this._REFRESH_RATE = 60;
     this.silent = silent;
-    this.switchboard = new EventEmitter;
     try {
       this._logTime = Date.now();
       // Checks for internet connection after this amount of time.
       this._hasInternet = this.hasInternet();
+      // # First need a switchboard for subscription
+      this.switchboard = new Switchboard(this);
+      // this.switchboardThread = Thread(target = this.switchboard.run);
+      // this.switchboardThread.start();
       // # Then need a communicator
       this.com = new Communicator(audio_timeout, this);
       // # Then short term memory
@@ -68,9 +72,6 @@ class Dustbin {
       process.exit(1);
     }
   }
-  subscribe(event, listener) {
-    return this.switchboard.subscribe(event, listener);
-  }
   log() {
     this.logger.log(arguments);
   }
@@ -80,6 +81,8 @@ class Dustbin {
       this.robot.end();
     if (this.vision)
       this.vision.stop();
+    if (this.switchboard)
+      this.switchboard.stop();
     this.logger.end();
   }
   hasInternet() {
@@ -108,9 +111,12 @@ class Dustbin {
       process.exit(1);
     }
   }
+  subscribe(event, listener, callback = null) {
+    this.switchboard.subscribe(event, listener, callback);
+  }
   trigger(event, kwargs) {
     kwargs.event = event;
-    this.switchboard.emit(event, kwargs);
+    this.switchboard.runTrigger(event, kwargs);
   }
   runCommands(commands) {
     let promise = Promise.resolve();

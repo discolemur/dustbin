@@ -37,7 +37,7 @@ class Robot {
   }
   setListeners(Events) {
     class WiggleListener extends EventListener {
-      callback(kwargs) {
+      callback() {
         return this.container.wiggle();
       }
     }
@@ -47,7 +47,7 @@ class Robot {
       }
     }
     class FigureEightListener extends EventListener {
-      callback(kwargs) {
+      callback() {
         return this.container.figureEight();
       }
     }
