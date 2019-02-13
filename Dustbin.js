@@ -37,7 +37,9 @@ class Dustbin {
   constructor(_logger, audio_timeout, silent) {
     this._lastCheck = Date.now();
     this.logger = _logger;
+    this.log('-------------------DUSTBIN BEGINS-------------------');
     this.keepGoing = true;
+    this.ended = false;
     this._REFRESH_RATE = 60;
     this.silent = silent;
     this.switchboard = new EventEmitter();
@@ -62,19 +64,22 @@ class Dustbin {
       process.exit(1);
     }
   }
-  subscribe(event, listener) {
-    return this.switchboard.subscribe(event, listener);
-  }
   log() {
     this.logger.log(arguments);
   }
+  subscribe(event, listener) {
+    return this.switchboard.subscribe(event, listener);
+  }
   done() {
+    if (this.ended) { return; }
     this.keepGoing = false;
     if (this.robot)
       this.robot.end();
     if (this.vision)
       this.vision.stop();
+    this.log('-------------------DUSTBIN   ENDS-------------------');
     this.logger.end();
+    this.ended = true;
   }
   testInternet() {
     // After REFRESH_RATE seconds, should check again for internet connection
@@ -92,7 +97,7 @@ class Dustbin {
           this.testInternet();
         }
         setTimeout(() => {
-          this.com.interpretAudio().then(response=>{
+          this.com.interpretAudio().then(response => {
 
           })
           this.log('Listening process continues.');
@@ -115,10 +120,10 @@ class Dustbin {
     let promise = Promise.resolve();
     for (const command of commands) {
       if (command.indexOf('.wav') != -1) {
-        promise = promise.then(() => {return this.com.interpretFromWavFile(command);});
+        promise = promise.then(() => { return this.com.interpretFromWavFile(command); });
       }
       else {
-        promise = promise.then(() => {return this.com.interpretText(command);});
+        promise = promise.then(() => { return this.com.interpretText(command); });
       }
     }
     return promise;

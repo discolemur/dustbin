@@ -7,6 +7,7 @@ const props = require('./props');
 const VERBOSE = props.verbose;
 const SILENT = props.silent;
 const AUDIO_TIMEOUT = props.audioTimeout;
+const PERSISTENT_LOGGING = true;
 
 const { Events, EventListener, EventsByNumber } = require('../communication/Events.js');
 const assert = require('chai').assert;
@@ -17,6 +18,8 @@ class SpecialListener extends EventListener {
     }
 }
 
+const TEST_LOGGER = new Logger(VERBOSE, PERSISTENT_LOGGING);
+
 class TestCase {
     constructor(title) {
         this.title = title;
@@ -24,7 +27,7 @@ class TestCase {
         this.eventCallCount = {};
         this.success = true;
         this.message = this.title;
-        this.dustbin = new Dustbin(new Logger(VERBOSE), AUDIO_TIMEOUT, SILENT);
+        this.dustbin = new Dustbin(TEST_LOGGER, AUDIO_TIMEOUT, SILENT);
     }
 
     assertCalled(listeners) {

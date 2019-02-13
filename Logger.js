@@ -8,8 +8,9 @@ var util = require('util');
 const LOG_LIMIT = 5
 
 class Logger {
-  constructor(verbose) {
+  constructor(verbose, persistent=false) {
     this.verbose = verbose;
+    this.persistent = persistent;
     this.logfile = this.getLogfile();
     this.lstream = fs.createWriteStream(this.logfile);
     this.log('Logger initialized.');
@@ -33,23 +34,30 @@ class Logger {
     if (!this.lstream.writable) {
       return;
     }
-    for (let i = 0; i < arguments.length; i++) {
-      if (Array.isArray(arguments[i])) {
+    let args = arguments;
+    if (arguments.length == 1 && typeof arguments[0] !== 'string') {
+      args = arguments[0];
+    }
+    for (let i = 0; i < args.length; i++) {
+      if (Array.isArray(args[i])) {
         this.lstream.write('[');
-        arguments[i].map(x => this.log(x));
+        args[i].map(x => this.log(x));
         this.lstream.write(']');
-      } else if (typeof arguments[i] === 'object') {
-        this.lstream.write(util.inspect(arguments[i]));
+      } else if (typeof args[i] === 'object') {
+        this.lstream.write(util.inspect(args[i]));
+        this.lstream.write('\n');
       } else {
-        this.lstream.write(`${arguments[i]}\n`);
+        this.lstream.write(`${args[i]}\n`);
       }
       if (this.verbose) {
-        console.log(arguments[i]);
+        console.log(args[i]);
       }
     }
   }
-  end() {
-    this.lstream.end();
+  end(force=false) {
+    if (!this.persistent || force) {
+      this.lstream.end();
+    }
   }
 }
 
