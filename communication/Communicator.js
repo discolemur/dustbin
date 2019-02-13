@@ -3,6 +3,8 @@
 const { Events, EventListener } = require('./Events.js');
 
 const uuid = require('uuid');
+const util = require('util');
+const fs = require('fs');
 const dialogflow = require('dialogflow');
 const _SESSION_ID = uuid.v4();
 const _PROJECT_ID = 'dust-bin-97d2d';
@@ -36,6 +38,7 @@ class SpeakListener extends EventListener {
   }
 }
 
+
 class Communicator {
   constructor(audio_timeout, dustbin) {
     this.DUSTBIN = dustbin;
@@ -44,41 +47,39 @@ class Communicator {
     // this.speaker = SpeechEngine(dustbin.log, dustbin.hasInternet)
     // this.audioHandler = AudioHandler(audio_timeout)
   }
-  //     def _detect_intent_audio(self, audio_file_path):
-  //         """Returns the result of detect intent with an audio file as input.
-  //         Using the same `session_id` between requests allows continuation
-  //         of the conversation."""
-  //         session_client = dialogflow.SessionsClient()
-  //         # Note: hard coding audio_encoding and sample_rate_hertz for simplicity.
-  //         audio_encoding = dialogflow.enums.AudioEncoding.AUDIO_ENCODING_LINEAR_16
-  //         #sample_rate_hertz = 16000
-  //         sample_rate_hertz = self.audioHandler.RATE
-  //         session = session_client.session_path(_PROJECT_ID, _SESSION_ID)
-  //         self.DUSTBIN.log('Session path: {}\n'.format(session))
-  //         with open(audio_file_path, 'rb') as audio_file:
-  //             input_audio = audio_file.read()
-  //         audio_config = dialogflow.types.InputAudioConfig(
-  //             audio_encoding=audio_encoding, language_code=_LANGUAGE_CODE,
-  //             sample_rate_hertz=sample_rate_hertz)
-  //         query_input = dialogflow.types.QueryInput(audio_config=audio_config)
-  //         response = session_client.detect_intent(
-  //             session=session, query_input=query_input,
-  //             input_audio=input_audio)
-  //         self.DUSTBIN.log('=' * 20)
-  //         self.DUSTBIN.log('Query text: {}'.format(response.query_result.query_text))
-  //         self.DUSTBIN.log('Detected intent: {} (confidence: {})\n'.format(
-  //             response.query_result.intent.display_name,
-  //             response.query_result.intent_detection_confidence))
-  //         self.DUSTBIN.log('Fulfillment text: {}\n'.format(response.query_result.fulfillment_text))
-  //         self.DUSTBIN.trigger(Events.HEAR_AUDIO)
-  //         return response
 
-  //   # REQUIRED ARGS: 'response'=string
+  /**
+   * 
+   * @param {*} kwargs REQUIRED ARGS: 'response'=string
+   */
   speak(kwargs) {
     if (!this.DUSTBIN.silent) {
       self.speaker.say(kwargs.response);
     }
     this.DUSTBIN.log(kwargs.response);
+  }
+  /**
+   * This takes the fields in the highest level of a dialogflow result, then sets its value to be the deepest value for that key in the convoluted structure of dialogflow's structValue json.
+   * @param {*} parameters These are parameters from dialogflow result
+   */
+  toArgs(parameters) {
+    let args = {};
+    Object.keys(parameters.fields).map(name => {
+      let tmpObj = parameters.fields[name]
+      while (typeof tmpObj !== 'string') {
+        if (tmpObj.kind == 'structValue') {
+          tmpObj = tmpObj.structValue;
+        } else if (tmpObj.fields !== undefined) {
+          tmpObj = tmpObj.fields;
+        } else if (tmpObj.kind == 'stringValue') {
+          tmpObj = tmpObj.stringValue;
+        } else {
+          tmpObj = tmpObj[Object.keys(tmpObj)[0]];
+        }
+      }
+      args[name] = tmpObj;
+    })
+    return args;
   }
 
   _handleAction(result) {
@@ -121,26 +122,27 @@ class Communicator {
       // IDENTIFY
       case 'identify.person':
         // TODO make sure we don't trigger until person parameter is resolved (conversation may occur on dialogflow's side)
-        this.DUSTBIN.trigger(Events.REQ_IDENTIFY_PERSON, { pronoun: result.parameters['pronoun'] });
+        this.DUSTBIN.trigger(Events.REQ_IDENTIFY_PERSON, { pronoun: this.toArgs(result.parameters) });
         break;
       case 'identify.object':
-        this.DUSTBIN.trigger(Events.REQ_IDENTIFY_OBJECT, { obj: result.parameters['object'] });
+        this.DUSTBIN.trigger(Events.REQ_IDENTIFY_OBJECT, { obj: this.toArgs(result.parameters).object });
         break;
 
       // FIND
       case 'find.person':
-        this.DUSTBIN.trigger(Events.REQ_FIND_PERSON, { person: list(result.parameters['person'].values())[0] });
+        this.DUSTBIN.trigger(Events.REQ_FIND_PERSON, this.toArgs(result.parameters));
         break;
       case 'find.object':
-        this.DUSTBIN.trigger(Events.REQ_FIND_OBJECT, { obj: result.parameters['object'] });
+        this.DUSTBIN.trigger(Events.REQ_FIND_OBJECT, { obj: this.toArgs(result.parameters).object });
         break;
 
       // GO
       case 'go.follow':
-        this.DUSTBIN.trigger(Events.REQ_FOLLOW, { person: list(result.parameters['person'].values())[0] })
+        this.DUSTBIN.trigger(Events.REQ_FOLLOW, { person: this.toArgs(result.parameters) })
         break;
       case 'go.wait':
-        this.DUSTBIN.trigger(Events.GO_WAIT, { obj: result.parameters['object'], preposition: result.parameters['preposition'] });
+        let waitParams = this.toArgs(result.parameters);
+        this.DUSTBIN.trigger(Events.GO_WAIT, { obj: waitParams.object, preposition: waitParams.preposition });
         break;
 
       // MOVEMENT TRICKS
@@ -148,7 +150,7 @@ class Communicator {
         this.DUSTBIN.trigger(Events.REQ_FIGURE_EIGHT)
         break;
       case 'do.spin':
-        this.DUSTBIN.trigger(Events.REQ_SPIN, { dps: 80, times: 1, reversed: True })
+        this.DUSTBIN.trigger(Events.REQ_SPIN, { dps: 80, times: 1, reversed: true })
         break;
       case 'do.wiggle':
         this.DUSTBIN.trigger(Events.REQ_WIGGLE)
@@ -176,13 +178,11 @@ class Communicator {
         .detectIntent(request)
         .then(responses => {
           const result = responses[0].queryResult;
-          // console.log(`  Query: ${result.queryText}`);
-          // console.log(`  Response: ${result.fulfillmentText}`);
           // if (result.intent)
           // console.log(`  Intent: ${result.intent.displayName}`);
           self.DUSTBIN.log(`Query text: ${result.queryText}\n`);
           self.DUSTBIN.log(`Fulfillment text: ${result.fulfillmentText}\n`);
-          self.DUSTBIN.trigger(Events.RECEIVE_TEXT);
+          self.DUSTBIN.trigger(Events.INTERPRETED_TEXT);
           resolve(self._handleAction(result));
         })
         .catch(err => {
@@ -192,15 +192,39 @@ class Communicator {
     })
   }
   interpretFromWavFile(filename) {
-    //     def interpretFromWavFile(self, filename) :
-    //         response = None
-    //         try :
-    //             response = self._detect_intent_audio(filename)
-    //             self._handleAction(response)
-    //         except :
-    //             self.DUSTBIN.log('FAILED TO INTERPRET AUDIO AND HANDLE IT!')
-    //         return response
-    return Promise.resolve();
+    let self = this;
+    return new Promise(function (resolve, reject) {
+      const readFile = util.promisify(fs.readFile);
+      readFile(filename).then(inputAudio => {
+        const audioEncoding = 'AUDIO_ENCODING_LINEAR_16';
+        const sampleRateHertz = 16000;
+        const request = {
+          session: sessionPath,
+          queryInput: {
+            audioConfig: {
+              audioEncoding: audioEncoding,
+              sampleRateHertz: sampleRateHertz,
+              languageCode: _LANGUAGE_CODE,
+            },
+          },
+          inputAudio: inputAudio
+        };
+        sessionClient
+          .detectIntent(request)
+          .then(responses => {
+            const result = responses[0].queryResult;
+            // if (result.intent)
+            // console.log(`  Intent: ${result.intent.displayName}`);
+            self.DUSTBIN.log(`Query text: ${result.queryText}\n`);
+            self.DUSTBIN.log(`Fulfillment text: ${result.fulfillmentText}\n`);
+            self.DUSTBIN.trigger(Events.INTERPRETED_AUDIO)
+            resolve(self._handleAction(result));
+          })
+      }).catch(err => {
+          self.DUSTBIN.log('FAILED TO INTERPRET FROM TEXT AND HANDLE IT!', err);
+          reject(err);
+        });
+    })
   }
 
   interpretAudio() {

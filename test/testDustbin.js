@@ -1,17 +1,7 @@
 "use strict";
 
-const Dustbin = require('../Dustbin.js');
-const Logger = require('../Logger.js');
 
-const props = require('./props');
 const Commands = require('./Commands.js');
-
-const VERBOSE = props.verbose;
-const SILENT = props.silent;
-const AUDIO_TIMEOUT = props.audioTimeout;
-
-let dustbin = new Dustbin(new Logger(VERBOSE), AUDIO_TIMEOUT, SILENT);
-
 const TestCase = require('./TestCase.js');
 
 const assert = require('chai').assert;
@@ -23,20 +13,12 @@ const assert = require('chai').assert;
 //   4) assert events fire correctly.
 
 describe("Basic commands", () => {
-  beforeEach(() => {
-    if (!dustbin.keepGoing) {
-      dustbin = Dustbin(logger, AUDIO_TIMEOUT, SILENT);
-    }
-  });
-  after(() => {
-    dustbin.done();
-  });
   describe("Hello, Goodbye.", () => {
     it("should say hi.", () => {
       const title = 'Test Hello';
       return new TestCase(title)
         .addCommand(Commands.helloCommand)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
         });
@@ -45,7 +27,7 @@ describe("Basic commands", () => {
       const title = 'Test Shutdown';
       return new TestCase(title)
         .addCommand(Commands.shutdownCommand)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
         });
@@ -55,7 +37,7 @@ describe("Basic commands", () => {
       return new TestCase(title)
         .addCommand(Commands.helloCommand)
         .addCommand(Commands.shutdownCommand)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
         });
@@ -66,7 +48,7 @@ describe("Basic commands", () => {
       const title = 'Test introduction';
       return new TestCase(title)
         .addCommand(Commands.introductionCommand)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           
         });
@@ -75,18 +57,18 @@ describe("Basic commands", () => {
       const title = 'Test unknown command';
       return new TestCase(title)
         .addCommand(Commands.unknownCommand)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
         });
     });
   });
-  describe('Identify (check sight)', () => {
+  describe.skip('Identify (check sight)', () => {
     it('Identify Person', () => {
       const title = 'Test identify person';
       return new TestCase(title)
         .addCommand(Commands.identifyPersonCommand)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
         });
@@ -95,18 +77,18 @@ describe("Basic commands", () => {
       const title = 'Test identify object';
       return new TestCase(title)
         .addCommand(Commands.identifyObjectCommand)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
         });
     })
   })
-  describe('Find (check sight, memory, and motion)', () => {
+  describe.skip('Find (check sight, memory, and motion)', () => {
     it('Find Person', () => {
       const title = 'Test find person';
       return new TestCase(title)
         .addCommand(Commands.findPersonCommand)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
         });
@@ -115,18 +97,18 @@ describe("Basic commands", () => {
       const title = 'Test find object';
       return new TestCase(title)
         .addCommand(Commands.findObjectCommand)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
         });
     })
   })
-  describe('Follow and wait (check sight, memory, and motion)', () => {
+  describe.skip('Follow and wait (check sight, memory, and motion)', () => {
     it('Follow Me', () => {
       const title = 'Test follow me';
       return new TestCase(title)
         .addCommand(Commands.followMeCommand)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
         });
@@ -136,7 +118,7 @@ describe("Basic commands", () => {
       const params = { 'preposition': 'by', 'obj': 'the door' };
       return new TestCase(title)
         .addCommand(Commands.waitCommand, params)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
         });
@@ -147,18 +129,18 @@ describe("Basic commands", () => {
       const title = 'Test audio command';
       return new TestCase(title)
         .addCommand(Commands.checkHearingCommand)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
         });
     })
   })
-  describe('Tricks (check motion)', () => {
+  describe.skip('Tricks (check motion)', () => {
     it('Spin', () => {
       const title = 'Test spin';
       return new TestCase(title)
         .addCommand(Commands.spinCommand)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
         });
@@ -167,7 +149,7 @@ describe("Basic commands", () => {
       const title = 'Test wiggle';
       return new TestCase(title)
         .addCommand(Commands.wiggleCommand)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
         });
@@ -176,7 +158,7 @@ describe("Basic commands", () => {
       const title = 'Test figure eight'
       return new TestCase(title)
         .addCommand(Commands.figureEightCommand)
-        .runTest(dustbin)
+        .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
         });

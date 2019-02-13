@@ -1,5 +1,13 @@
 "use strict";
 
+const Dustbin = require('../Dustbin.js');
+const Logger = require('../Logger.js');
+
+const props = require('./props');
+const VERBOSE = props.verbose;
+const SILENT = props.silent;
+const AUDIO_TIMEOUT = props.audioTimeout;
+
 const { Events, EventListener, EventsByNumber } = require('../communication/Events.js');
 const assert = require('chai').assert;
 
@@ -16,6 +24,7 @@ class TestCase {
         this.eventCallCount = {};
         this.success = true;
         this.message = this.title;
+        this.dustbin = new Dustbin(new Logger(VERBOSE), AUDIO_TIMEOUT, SILENT);
     }
 
     assertCalled(listeners) {
@@ -28,7 +37,7 @@ class TestCase {
             else {
                 assert.equal(listeners[event].callCount,
                     0,
-                    `Event ${event} called ${listeners[event].callCount} times, expected 0`);
+                    `Event ${EventsByNumber[event]} called ${listeners[event].callCount} times, expected 0`);
             }
         }
     }
@@ -38,8 +47,10 @@ class TestCase {
             return;
         }
         for (let key of Object.keys(params)) {
-            const length = params[key].toString().length;
-            if (length > 0) {
+            if (typeof params[key] === "string" && params[key].length > 0) {
+                return;
+            }
+            if (params[key] !== undefined && params[key] !== null) {
                 return;
             }
             this.success = false;
@@ -67,26 +78,27 @@ class TestCase {
                 this.success = false;
             }
         }
+        this.dustbin.done();
         return {success: this.success, message: this.message};
     }
 
-    subscribeListeners(dustbin) {
+    subscribeListeners() {
         let listeners = {};
         for (let key of Object.values(Events)) {
             let listener = new SpecialListener(this);
-            dustbin.subscribe(key, listener);
+            this.dustbin.subscribe(key, listener);
             listeners[key] = listener;
         }
         return listeners;
     }
 
-    runTest(dustbin) {
+    runTest() {
         console.log(`${'='.repeat(20)}> Test step: ${this.title}`);
-        this.listeners = this.subscribeListeners(dustbin);
+        this.listeners = this.subscribeListeners();
         let self = this;
-        return dustbin.runCommands(this.commands).catch(err=>{
+        return this.dustbin.runCommands(this.commands).catch(err=>{
             console.log(err);
-            this.success = false;
+            self.success = false;
         }).then(()=>{return self._finish()});
     }
 }

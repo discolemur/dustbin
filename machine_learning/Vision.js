@@ -37,19 +37,19 @@ class Vision {
   // ''' HANDLERS '''
   _handleFindObject(obj) {
     this.DUSTBIN.log('Find object is not yet implemented.');
-    this.DUSTBIN.trigger(Events.OBJECT_FOUND, {obj : obj});
+    // this.DUSTBIN.trigger(Events.OBJECT_FOUND, {obj : obj});
   }
   _handleIdentifyObject(obj) {
     this.DUSTBIN.log('Identify object is not yet implemented.');
-    this.DUSTBIN.trigger(Events.OBJECT_IDENTIFIED, {obj : obj});
+    // this.DUSTBIN.trigger(Events.OBJECT_IDENTIFIED, {obj : obj});
   }
   _handleFindPerson(person) {
     this.DUSTBIN.log('Find person is not yet implemented.');
-    this.DUSTBIN.trigger(Events.PERSON_FOUND, {person : person});
+    // this.DUSTBIN.trigger(Events.PERSON_FOUND, {person : person});
   }
   _handleIdentifyPerson(pronoun) {
     this.DUSTBIN.log('Identify person is not yet implemented.');
-    this.DUSTBIN.trigger(Events.PERSON_IDENTIFIED, {person : pronoun});
+    // this.DUSTBIN.trigger(Events.PERSON_IDENTIFIED, {person : pronoun});
   }
 
   // ''' METHODS '''

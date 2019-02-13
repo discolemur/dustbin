@@ -30,6 +30,9 @@ class Logger {
     return filename;
   }
   log() {
+    if (!this.lstream.writable) {
+      return;
+    }
     for (let i = 0; i < arguments.length; i++) {
       if (Array.isArray(arguments[i])) {
         this.lstream.write('[');

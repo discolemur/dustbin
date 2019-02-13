@@ -51,21 +51,39 @@ class Robot {
         return this.container.figureEight();
       }
     }
+    class FindListener extends EventListener {
+      callback() {
+        // this.DUSTBIN.trigger(Events.ROBOT_MOVED);
+      }
+    }
+    class FollowListener extends EventListener {
+      callback() {
+        // this.DUSTBIN.trigger(Events.ROBOT_FOLLOWING);
+      }
+    }
+    class WaitListener extends EventListener {
+      callback() {
+        // this.DUSTBIN.trigger(Events.ROBOT_WAITING);
+      }
+    }
     this.wiggleListener = new WiggleListener(this);
     this.figureEightListener = new FigureEightListener(this);
     this.spinListener = new SpinListener(this);
+    this.findListener = new FindListener(this);
+    this.followListener = new FollowListener(this);
+    this.waitListener = new WaitListener(this);
     // ### Placeholders ###
-    this.DUSTBIN.subscribe(Events.REQ_FIND_OBJECT, this.wiggleListener);
-    this.DUSTBIN.subscribe(Events.REQ_FIND_PERSON, this.wiggleListener);
-    this.DUSTBIN.subscribe(Events.REQ_FOLLOW, this.wiggleListener);
-    this.DUSTBIN.subscribe(Events.GO_WAIT, this.wiggleListener);
+    this.DUSTBIN.subscribe(Events.REQ_FIND_OBJECT, this.findListener);
+    this.DUSTBIN.subscribe(Events.REQ_FIND_PERSON, this.findListener);
+    this.DUSTBIN.subscribe(Events.REQ_FOLLOW, this.followListener);
+    this.DUSTBIN.subscribe(Events.GO_WAIT, this.waitListener);
     // ### Finished ###
     this.DUSTBIN.subscribe(Events.REQ_WIGGLE, this.wiggleListener);
     this.DUSTBIN.subscribe(Events.REQ_SPIN, this.spinListener);
     this.DUSTBIN.subscribe(Events.REQ_FIGURE_EIGHT, this.figureEightListener);
   }
   wiggle() {
-    if (this.roomba) {
+    if (this.roomba == null) {return;}
       this.roomba.go(0, 40);
       setTimeout(() => {
         this.roomba.go(0, -40);
@@ -74,16 +92,21 @@ class Robot {
           setTimeout(this.roomba.go(0, 0), 400);
         }, 800);
       }, 400);
-    }
+    this.DUSTBIN.trigger(Events.ROBOT_MOVED);
   }
   move(position) {
+    if (this.roomba == null) {return;}
     this.DUSTBIN.log(`Going to position ${position}`);
+    this.DUSTBIN.trigger(Events.ROBOT_MOVED);
   }
   figureEight() {
+    if (this.roomba == null) {return;}
     // Will do a figure eightor this.toTrigger.qsize() > 0or this.toTrigger.qsize() > 0.
+    this.DUSTBIN.trigger(Events.ROBOT_MOVED);
   }
   // degrees per second, number of times rotating
   spin(dps = DEG_PER_SEC, times = TIMES_TO_SPIN, reversed = REVERSED) {
+    if (this.roomba == null) {return;}
     if (!this.roomba) {
       return;
     }
@@ -95,24 +118,15 @@ class Robot {
       this.roomba.go(0, dps * sign);
       time.sleep(times * 360 / dps);
     }
+    this.DUSTBIN.trigger(Events.ROBOT_MOVED);
   }
   end() {
-    this.DUSTBIN.log('ENDING ROBOT THREAD');
+    if (this.roomba == null) {return;}
+    this.DUSTBIN.log('CLOSING ROBOT CONNECTION');
     if (this.roomba) {
       this.roomba.close();
     }
     this.keepGoing = false;
-  }
-  run() {
-    try {
-      while (this.keepGoing) {
-        this.DUSTBIN.log('Robot process continues.');
-      }
-    } catch (e) {
-      this.DUSTBIN.log('Robot process had fatal error.', e);
-      console.log('Robot process had fatal error.', e);
-    }
-    this.DUSTBIN.log('ROBOT OFFICIALLY DEAD.');
   }
 }
 
