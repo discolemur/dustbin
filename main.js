@@ -6,6 +6,17 @@ var argparse = require('argparse');
 const Logger = require('./Logger.js');
 const Dustbin = require('./Dustbin.js');
 
+/**
+ * This file can be run from the commandline to run Dustbin.
+ * @namespace main
+ */
+
+/**
+ * 
+ * @param {*} timeout Audio timeout. This is how long it will listen for your response before giving up.
+ * @param {*} verbose Print log to console (always logs in the file.)
+ * @param {*} silent Do not play response audio.
+ */
 function main(timeout, verbose, silent) {
   let dustbin = new Dustbin(new Logger(verbose), timeout, silent);
   try {
