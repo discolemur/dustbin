@@ -1,6 +1,6 @@
 'use strict';
 
-const { Events, EventListener } = require('./Events.js');
+const { Events, EventListener } = require(`${__dirname}/Events.js`);
 
 const uuid = require('uuid');
 const util = require('util');
@@ -50,13 +50,13 @@ class Communicator {
 
   /**
    * 
-   * @param {*} kwargs REQUIRED ARGS: 'response'=string
+   * @param {*} kwargs REQUIRED ARGS: 'message'=string
    */
   speak(kwargs) {
     if (!this.DUSTBIN.silent) {
-      self.speaker.say(kwargs.response);
+      self.speaker.say(kwargs.message);
     }
-    this.DUSTBIN.log(kwargs.response);
+    this.DUSTBIN.log(kwargs.message);
   }
   /**
    * This takes the fields in the highest level of a dialogflow result, then sets its value to be the deepest value for that key in the convoluted structure of dialogflow's structValue json.
@@ -87,7 +87,7 @@ class Communicator {
     const response_msg = result.fulfillmentText;
     const query_msg = result.queryText;
     if (response_msg.length > 0)
-      this.DUSTBIN.trigger(Events.SPEAK, { query: query_msg, response: response_msg, action: action })
+      this.DUSTBIN.trigger(Events.SPEAK, { query: query_msg, message: response_msg, action: action })
 
     if (action == 'input.unknown') {
       this.DUSTBIN.trigger(Events.NOT_UNDERSTAND_MSG, { query: query_msg, response: response_msg, action: action })
@@ -122,10 +122,10 @@ class Communicator {
       // IDENTIFY
       case 'identify.person':
         // TODO make sure we don't trigger until person parameter is resolved (conversation may occur on dialogflow's side)
-        this.DUSTBIN.trigger(Events.REQ_IDENTIFY_PERSON, { pronoun: this.toArgs(result.parameters) });
+        this.DUSTBIN.trigger(Events.REQ_IDENTIFY_PERSON, this.toArgs(result.parameters));
         break;
       case 'identify.object':
-        this.DUSTBIN.trigger(Events.REQ_IDENTIFY_OBJECT, { obj: this.toArgs(result.parameters).object });
+        this.DUSTBIN.trigger(Events.REQ_IDENTIFY_OBJECT, this.toArgs(result.parameters).object);
         break;
 
       // FIND
@@ -133,12 +133,12 @@ class Communicator {
         this.DUSTBIN.trigger(Events.REQ_FIND_PERSON, this.toArgs(result.parameters));
         break;
       case 'find.object':
-        this.DUSTBIN.trigger(Events.REQ_FIND_OBJECT, { obj: this.toArgs(result.parameters).object });
+        this.DUSTBIN.trigger(Events.REQ_FIND_OBJECT, this.toArgs(result.parameters).object);
         break;
 
       // GO
       case 'go.follow':
-        this.DUSTBIN.trigger(Events.REQ_FOLLOW, { person: this.toArgs(result.parameters) })
+        this.DUSTBIN.trigger(Events.REQ_FOLLOW, this.toArgs(result.parameters))
         break;
       case 'go.wait':
         let waitParams = this.toArgs(result.parameters);

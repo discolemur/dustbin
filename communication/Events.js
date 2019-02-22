@@ -48,6 +48,7 @@ const Events = {
   INTERPRETED_AUDIO : 20,
   UNDERSTAND_MSG : 21,
   INTERPRETED_TEXT : 22,
+  // REQUIRED ARGS: 'message'=string
   SPEAK : 23,
   RESPONSE_NO : 24,
   RESPONSE_YES : 25,

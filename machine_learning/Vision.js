@@ -1,9 +1,14 @@
 'use strict';
 
 // TODO use async.doWhilst or something else rather than all the crazy stuff I've got set up so far.
+const numJitters = 15
 
 const { Events, EventListener } = require('../communication/Events.js');
-const Objects = require('./Vision.js');
+
+const KNOWN_PEOPLE_FILE = `${__dirname}/models/faces.json`;
+const KNOWN_PEOPLE = require(KNOWN_PEOPLE_FILE);
+const KNOWN_OBJECTS_FILE = `${__dirname}/models/faces.json`;
+const KNOWN_OBJECTS = require(KNOWN_OBJECTS_FILE);
 
 class FindObjectListener extends EventListener {
   callback(kwargs) {
@@ -28,10 +33,24 @@ class IdentifyPersonListener extends EventListener {
 
 class Vision {
   constructor(dustbin) {
-    this.known_people = [];
-    this.known_objects = [];
     this.DUSTBIN = dustbin;
+    this.fr = require('face-recognition');
+    this.detector = this.fr.AsyncFaceDetector();
+    this.recognizer = this.fr.AsyncFaceRecognizer();
+
+    const known_objects = [];
+
+    if (KNOWN_PEOPLE) {
+      if (Object.keys(KNOWN_PEOPLE).length > 0) {
+        this.recognizer.load(KNOWN_PEOPLE);
+      }
+    }
+
     this._subscribeListeners();
+  }
+
+  result(success, person) {
+    return { success: success, person: person };
   }
 
   // ''' HANDLERS '''
@@ -46,10 +65,57 @@ class Vision {
   _handleFindPerson(person) {
     this.DUSTBIN.log('Find person is not yet implemented.');
     // this.DUSTBIN.trigger(Events.PERSON_FOUND, {person : person});
+    this.DUSTBIN.trigger(Events.SPEAK, { message: `Sorry, I couldn't find ${person}.` });
   }
+
+  // TODO get face image to analyze
   _handleIdentifyPerson(pronoun) {
-    this.DUSTBIN.log('Identify person is not yet implemented.');
-    // this.DUSTBIN.trigger(Events.PERSON_IDENTIFIED, {person : pronoun});
+    this.faceImage = null;
+    return this.identifyPerson(faceImage).then(result => {
+      const { success, person } = result;
+      if (success) {
+        this.dustbin.trigger(PERSON_IDENTIFIED, { pronoun: pronoun });
+        this.DUSTBIN.trigger(Events.SPEAK, { message: `I know ${pronoun}. ${pronoun} is ${person}` });
+      } else {
+        this.dustbin.trigger(PERSON_NOT_IDENTIFIED, { pronoun: pronoun });
+        if (pronoun == 'I') {
+          this.DUSTBIN.trigger(Events.SPEAK, { message: `Sorry, I don't know who you are.` });
+        } else if (pronoun == 'they' || pronoun == 'them') {
+          this.DUSTBIN.trigger(Events.SPEAK, { message: `Sorry, I don't know who they are.` });
+        } else {
+          this.DUSTBIN.trigger(Events.SPEAK, { message: `Sorry, I don't know who ${pronoun} is.` });
+        }
+      }
+    })
+  }
+
+  /**
+   * If runs too slowly, try decreasing numJitters (which modifies the images slightly to make it more accurate detecting face from many angles.)
+   * @param {*} name Name of person
+   * @param {*} faces Pictures of person
+   */
+  learnPerson(name, faces) {
+    this.recognizer.addFaces(faces, name, numJitters);
+  }
+
+  /**
+   * Returns a promise that resolves {success, person}
+   * @param {*} faceImage 
+   */
+  identifyPerson(faceImage) {
+    if (!faceImage) {
+      return Promise.resolve(false);
+    }
+    let self = this;
+    return this.recognizer.predictBest(faceImage)
+      .then((bestPrediction) => {
+        self.dustbin.log(`Identified ${bestPrediction.className} with accuracy ${bestPrediction.distance}.`)
+        return self.result(true, bestPrediction.className);
+      })
+      .catch((error) => {
+        self.dustbin.log(error);
+        return self.result(false);
+      })
   }
 
   // ''' METHODS '''
@@ -64,16 +130,20 @@ class Vision {
     this.DUSTBIN.subscribe(Events.REQ_IDENTIFY_PERSON, this.IPL);
   }
   stop() {
+    this.DUSTBIN.log('Saving learned faces...');
+    const fs = require('fs')
+    const modelState = this.recognizer.serialize()
+    fs.writeFileSync(KNOWN_PEOPLE_FILE, JSON.stringify(modelState))
     this.DUSTBIN.log('ENDING VISION THREAD');
   }
   run() {
     try {
-      async.doWhilst(()=>{
-        setTimeout(()=>{
+      async.doWhilst(() => {
+        setTimeout(() => {
           this.DUSTBIN.log('Vision process continues.');
         }, 4000)
       }, this.DUSTBIN.keepGoing);
-    } catch(e) {
+    } catch (e) {
       this.DUSTBIN.log('Vision process had fatal error.', e);
       print('Vision process had fatal error.', e);
     }

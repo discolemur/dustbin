@@ -3,8 +3,8 @@
 const { Events, EventListener, EventEmitter } = require('./communication/Events.js');
 const { Communicator, SpeakListener } = require('./communication/Communicator.js');
 const { ShortTermMemory, MessageListener } = require('./memory/ShortTermMemory.js');
-const Robot = require('./robot/Robot.js');
-const { Vision } = require('./machine_learning/Vision.js');
+const Robot = require(`${__dirname}/robot/Robot.js`);
+const { Vision } = require(`${__dirname}/machine_learning/Vision.js`);
 
 class ShutdownListener extends EventListener {
   callback() {

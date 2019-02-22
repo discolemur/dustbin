@@ -11,6 +11,7 @@
     "argparse": "^1.0.10",
     "chai": "^4.1.2",
     "dialogflow": "^0.1.0",
+    "face-recognition": "^0.9.4",
     "glob": "^7.1.2",
     "mocha": "^5.2.0"
   }
