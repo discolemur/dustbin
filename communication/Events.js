@@ -4,8 +4,38 @@ Events Class
 Defines global variables representing which events can trigger callbacks.
 */
 
-const uuid = require('uuid');
+const config = require(`${__dirname}/../config.json`);
 
+// TODO fill in the vision communication code and appropriately handle communications.
+// Use mosquitto as a localhost mqtt server
+ 
+var mqtt = require('mqtt')
+var client  = mqtt.connect(`mqtt://${config.mqtt_host}:${config.mqtt_port}`)
+ 
+client.on('connect', function () {
+  client.subscribe('/vision', function (err) {
+    if (!err) {
+      console.log('subscribed to vision')
+    }
+  });
+  client.subscribe('/ping', function(err) {
+    if (!err) {
+      console.log('subscribed to ping')
+    }
+  })
+})
+ 
+client.on('message', function (topic, message) {
+  console.log(`Received message on ${topic}.`)
+  console.log(message.toString())
+  if (topic == '/ping') {
+    client.publish("/vision", '{"request": "die"}')
+    client.end()
+  }
+})
+
+
+const uuid = require('uuid');
 class EventListener {
   constructor(container) {
     this._hash = uuid();
@@ -25,41 +55,41 @@ class EventListener {
 }
 
 const Events = {
-  REQ_SHUTDOWN : 0,
-  REQ_IDENTIFY_PERSON : 1,
-  REQ_IDENTIFY_OBJECT : 2,
-  PERSON_IDENTIFIED : 3,
-  OBJECT_IDENTIFIED : 4,
-  PERSON_NOT_IDENTIFIED : 5,
-  OBJECT_NOT_IDENTIFIED : 6,
-  NOT_UNDERSTAND_MSG : 7,
-  REQ_FOLLOW : 8,
-  GO_WAIT : 9,
-  INTRODUCE_ROBOT : 10,
-  GREETINGS : 11,
-  HEARD_YES : 12,
-  HEARD_NO : 13,
-  REQ_FIND_PERSON : 14,
-  REQ_FIND_OBJECT : 15,
-  PERSON_FOUND : 16,
-  OBJECT_FOUND : 17,
-  PERSON_NOT_FOUND : 18,
-  OBJECT_NOT_FOUND : 19,
-  INTERPRETED_AUDIO : 20,
-  UNDERSTAND_MSG : 21,
-  INTERPRETED_TEXT : 22,
+  REQ_SHUTDOWN: 0,
+  REQ_IDENTIFY_PERSON: 1,
+  REQ_IDENTIFY_OBJECT: 2,
+  PERSON_IDENTIFIED: 3,
+  OBJECT_IDENTIFIED: 4,
+  PERSON_NOT_IDENTIFIED: 5,
+  OBJECT_NOT_IDENTIFIED: 6,
+  NOT_UNDERSTAND_MSG: 7,
+  REQ_FOLLOW: 8,
+  GO_WAIT: 9,
+  INTRODUCE_ROBOT: 10,
+  GREETINGS: 11,
+  HEARD_YES: 12,
+  HEARD_NO: 13,
+  REQ_FIND_PERSON: 14,
+  REQ_FIND_OBJECT: 15,
+  PERSON_FOUND: 16,
+  OBJECT_FOUND: 17,
+  PERSON_NOT_FOUND: 18,
+  OBJECT_NOT_FOUND: 19,
+  INTERPRETED_AUDIO: 20,
+  UNDERSTAND_MSG: 21,
+  INTERPRETED_TEXT: 22,
   // REQUIRED ARGS: 'message'=string
-  SPEAK : 23,
-  RESPONSE_NO : 24,
-  RESPONSE_YES : 25,
-  REQ_WIGGLE : 26,
-  REQ_FIGURE_EIGHT : 27,
-  REQ_SPIN : 28,
-  ROBOT_MOVED : 29,
+  SPEAK: 23,
+  RESPONSE_NO: 24,
+  RESPONSE_YES: 25,
+  REQ_WIGGLE: 26,
+  REQ_FIGURE_EIGHT: 27,
+  REQ_SPIN: 28,
+  ROBOT_MOVED: 29,
   ROBOT_FOLLOWING: 30,
   ROBOT_WAITING: 31,
 
-  _NEXT_KEY : 32
+  _NEXT_KEY: 32
 };
 
 let EventsByNumber = {};
@@ -70,6 +100,12 @@ for (let event of Object.keys(Events)) {
 class EventEmitter {
   constructor() {
     this.callbacks = {};
+    // TODO : use python through socket communication to do face recognition (to harness vision bonnet).
+    //var gaze = io.of('/gaze').on('connection', function (socket) {
+    //  socket.on('gaze', function (gdata) {
+    //    gaze.emit('gaze', gdata.toString());
+    //  });
+    //});
   }
   /**
    * Subscribes a listener.
@@ -83,7 +119,7 @@ class EventEmitter {
     }
     this.callbacks[event].push(listener)
     let self = this;
-    return ()=>{self.callbacks[event] = self.callback[event].filter(x => x != listener)};
+    return () => { self.callbacks[event] = self.callback[event].filter(x => x != listener) };
   }
   emit(event, kwargs = null) {
     if (this.callbacks[event] === undefined) {

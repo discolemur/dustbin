@@ -6,3 +6,4 @@ log*
 game*
 node_modules/*
 npm-debug.log
+sandbox*
