@@ -1,4 +1,6 @@
 {
-    "mqtt_port": 8888,
-    "mqtt_host": "localhost"
+    "mqtt_port": 1883,
+    "mqtt_host": "localhost",
+    "mqtt_vision_request": "/vision/request",
+    "mqtt_vision_response": "/vision/response"
 }

@@ -1,16 +1,10 @@
 'use strict';
 
-const { Events, EventListener, EventEmitter } = require('./communication/Events.js');
-const { Communicator, SpeakListener } = require('./communication/Communicator.js');
-const { ShortTermMemory, MessageListener } = require('./memory/ShortTermMemory.js');
+const { Events, EventListener, MyEventEmitter } = require('./communication/Events.js');
+const Communicator = require('./communication/Communicator.js').Communicator;
+const ShortTermMemory = require('./memory/ShortTermMemory.js').ShortTermMemory;
 const Robot = require(`${__dirname}/robot/Robot.js`);
-const { Vision } = require(`${__dirname}/machine_learning/Vision.js`);
-
-class ShutdownListener extends EventListener {
-  callback() {
-    return this.container.done()
-  }
-}
+const Vision = require(`${__dirname}/machine_learning/Vision.js`).Vision;
 
 /**
  * Dustbin Class
@@ -18,7 +12,7 @@ class ShutdownListener extends EventListener {
  * Holds global variables and global methods.
  * @module Dustbin
  * @namespace Dustbin
- * @class
+ * @class Dustbin
  * @classdesc This is a description of the MyClass class.
  */
 class Dustbin {
@@ -28,7 +22,8 @@ class Dustbin {
    * @param {*} audio_timeout Time waiting for audio before giving up and trying to interpret.
    * @param {*} silent If silent is true, then will not play audio. Otherwise, will speak back responses.
    */
-  constructor(_logger, audio_timeout, silent) {
+  constructor(_logger, audio_timeout, silent, _testing=false) {
+    this.testing = _testing;
     this._lastCheck = Date.now();
     this.logger = _logger;
     this.log('-------------------DUSTBIN BEGINS-------------------');
@@ -36,7 +31,7 @@ class Dustbin {
     this.ended = false;
     this._REFRESH_RATE = 60;
     this.silent = silent;
-    this.switchboard = new EventEmitter();
+    this.switchboard = new MyEventEmitter();
     try {
       // # Then need a communicator
       this.com = new Communicator(audio_timeout, this);
@@ -50,8 +45,7 @@ class Dustbin {
       // this.visionThread = Thread(target = this.vision.run);
       // this.visionThread.start();
       // # End by subscribing to shutdown
-      this.shutdownListener = new ShutdownListener(this);
-      this.subscribe(Events.REQ_SHUTDOWN, this.shutdownListener);
+      this.subscribe(new EventListener(Events.REQ_SHUTDOWN, (kwargs)=>this.done(kwargs)));
     } catch (e) {
       console.log('FATAL ERROR OCCURRED DURING SETUP!', e);
       this.done();
@@ -80,12 +74,11 @@ class Dustbin {
     this.logger.log(arguments);
   }
   /**
-   * Subscribes a listener to an event.
-   * @param {*} event Integer for the event.
+   * Subscribes an EventListener
    * @param {*} listener Listener object, includes callback for the triggered event.
    */
-  subscribe(event, listener) {
-    return this.switchboard.subscribe(event, listener);
+  subscribe(listener) {
+    return this.switchboard.subscribe(listener);
   }
   /**
    * This tells the Dustbin that it's time to stop.
@@ -95,8 +88,9 @@ class Dustbin {
     this.keepGoing = false;
     if (this.robot)
       this.robot.end();
-    if (this.vision)
-      this.vision.stop();
+    if (this.switchboard) {
+      this.switchboard.done(this.testing);
+    }
     this.log('-------------------DUSTBIN   ENDS-------------------');
     this.logger.end();
     this.ended = true;

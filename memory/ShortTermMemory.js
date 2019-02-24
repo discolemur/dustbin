@@ -14,19 +14,12 @@ const MSG_MEM_SIZE = 10;
         - map of area where robot has moved
 */
 
-class MessageListener extends EventListener {
-  callback(kwargs) {
-    return this.container.addMessage(kwargs.query, kwargs.response, kwargs.action);
-  }
-}
-
 class ShortTermMemory {
   constructor(dustbin) {
     this.DUSTBIN = dustbin;
     this._recentMessages = new Queue(MSG_MEM_SIZE);
-    this.messageListener = new MessageListener(this);
-    this.DUSTBIN.subscribe(Events.UNDERSTAND_MSG, this.messageListener);
-    this.DUSTBIN.subscribe(Events.NOT_UNDERSTAND_MSG, this.messageListener);
+    this.DUSTBIN.subscribe(new EventListener(Events.UNDERSTAND_MSG, (kwargs)=>this.addMessage(kwargs.query, kwargs.response, kwargs.action)));
+    this.DUSTBIN.subscribe(new EventListener(Events.NOT_UNDERSTAND_MSG, (kwargs)=>this.addMessage(kwargs.query, kwargs.response, kwargs.action)));
   }
 
   getRecentMessages() {
@@ -42,6 +35,5 @@ class ShortTermMemory {
 }
 
 module.exports = {
-    MessageListener,
     ShortTermMemory
 }

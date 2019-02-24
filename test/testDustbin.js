@@ -12,6 +12,8 @@ const assert = require('chai').assert;
 //   3) feed it a series of text commands,
 //   4) assert events fire correctly.
 
+console.log("NOTE: DON'T FORGET TO RUN MOSQUITTO AND faceRecognizer.py !!!!!!!!!!!!!!")
+
 describe("Basic commands", () => {
   describe("Hello, Goodbye.", () => {
     it("should say hi.", () => {
@@ -21,6 +23,7 @@ describe("Basic commands", () => {
         .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
+          console.log(`Finished ${title}`)
         });
     });
     it("should say bye.", () => {
@@ -30,6 +33,7 @@ describe("Basic commands", () => {
         .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
+          console.log(`Finished ${title}`)
         });
     });
     it("should say hello and goodbye", () => {
@@ -40,6 +44,7 @@ describe("Basic commands", () => {
         .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
+          console.log(`Finished ${title}`)
         });
     });
   });
@@ -60,10 +65,11 @@ describe("Basic commands", () => {
         .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
+          console.log(`Finished ${title}`)
         });
     });
   });
-  describe.skip('Identify (check sight)', () => {
+  describe('Identify (check sight)', () => {
     it('Identify Person', () => {
       const title = 'Test identify person';
       return new TestCase(title)
@@ -71,6 +77,7 @@ describe("Basic commands", () => {
         .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
+          console.log(`Finished ${title}`)
         });
     })
     it('Identify object', () => {
@@ -80,6 +87,7 @@ describe("Basic commands", () => {
         .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
+          console.log(`Finished ${title}`)
         });
     })
   })
@@ -91,6 +99,7 @@ describe("Basic commands", () => {
         .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
+          console.log(`Finished ${title}`)
         });
     })
     it('Find Object', () => {
@@ -100,6 +109,7 @@ describe("Basic commands", () => {
         .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
+          console.log(`Finished ${title}`)
         });
     })
   })
@@ -111,6 +121,7 @@ describe("Basic commands", () => {
         .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
+          console.log(`Finished ${title}`)
         });
     })
     it('Wait', () => {
@@ -121,6 +132,7 @@ describe("Basic commands", () => {
         .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
+          console.log(`Finished ${title}`)
         });
     })
   })
@@ -132,6 +144,7 @@ describe("Basic commands", () => {
         .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
+          console.log(`Finished ${title}`)
         });
     })
   })
@@ -143,6 +156,7 @@ describe("Basic commands", () => {
         .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
+          console.log(`Finished ${title}`)
         });
     })
     it('Wiggle', () => {
@@ -152,6 +166,7 @@ describe("Basic commands", () => {
         .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
+          console.log(`Finished ${title}`)
         });
     })
     it('Figure Eight', () => {
@@ -161,6 +176,7 @@ describe("Basic commands", () => {
         .runTest()
         .then(result=>{
           assert.isTrue(result.success, result.message);
+          console.log(`Finished ${title}`)
         });
     })
   })

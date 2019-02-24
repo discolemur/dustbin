@@ -43,6 +43,7 @@ const Commands = {
         testCase = incrementEventCount(testCase, Events.REQ_FIND_OBJECT);
         testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG);
         testCase = incrementEventCount(testCase, Events.INTERPRETED_TEXT);
+        testCase = incrementEventCount(testCase, Events.VISION_RESPONSE_RECEIVED);
         testCase = incrementEventCount(testCase, Events.SPEAK);
         testCase = incrementEventCount(testCase, Events.OBJECT_FOUND);
         return testCase;
@@ -52,6 +53,7 @@ const Commands = {
         testCase = incrementEventCount(testCase, Events.REQ_FIND_PERSON);
         testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG);
         testCase = incrementEventCount(testCase, Events.INTERPRETED_TEXT);
+        testCase = incrementEventCount(testCase, Events.VISION_RESPONSE_RECEIVED);
         testCase = incrementEventCount(testCase, Events.SPEAK);
         testCase = incrementEventCount(testCase, Events.PERSON_FOUND);
         return testCase;
@@ -70,6 +72,7 @@ const Commands = {
         testCase = incrementEventCount(testCase, Events.REQ_IDENTIFY_PERSON);
         testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG);
         testCase = incrementEventCount(testCase, Events.INTERPRETED_TEXT);
+        testCase = incrementEventCount(testCase, Events.VISION_RESPONSE_RECEIVED);
         testCase = incrementEventCount(testCase, Events.SPEAK);
         testCase = incrementEventCount(testCase, Events.PERSON_IDENTIFIED);
         return testCase;
@@ -79,6 +82,7 @@ const Commands = {
         testCase = incrementEventCount(testCase, Events.REQ_IDENTIFY_OBJECT);
         testCase = incrementEventCount(testCase, Events.UNDERSTAND_MSG);
         testCase = incrementEventCount(testCase, Events.INTERPRETED_TEXT);
+        testCase = incrementEventCount(testCase, Events.VISION_RESPONSE_RECEIVED);
         testCase = incrementEventCount(testCase, Events.SPEAK);
         testCase = incrementEventCount(testCase, Events.OBJECT_IDENTIFIED);
         return testCase;

@@ -12,12 +12,6 @@ const PERSISTENT_LOGGING = true;
 const { Events, EventListener, EventsByNumber } = require('../communication/Events.js');
 const assert = require('chai').assert;
 
-class SpecialListener extends EventListener {
-    callback(kwargs) {
-        return this.container.assertHasNonEmptyParam(kwargs);
-    }
-}
-
 const TEST_LOGGER = new Logger(VERBOSE, PERSISTENT_LOGGING);
 
 class TestCase {
@@ -27,7 +21,7 @@ class TestCase {
         this.eventCallCount = {};
         this.success = true;
         this.message = this.title;
-        this.dustbin = new Dustbin(TEST_LOGGER, AUDIO_TIMEOUT, SILENT);
+        this.dustbin = new Dustbin(TEST_LOGGER, AUDIO_TIMEOUT, SILENT, true);
     }
 
     assertCalled(listeners) {
@@ -88,8 +82,8 @@ class TestCase {
     subscribeListeners() {
         let listeners = {};
         for (let key of Object.values(Events)) {
-            let listener = new SpecialListener(this);
-            this.dustbin.subscribe(key, listener);
+            let listener = new EventListener(key, (kwargs)=>this.assertHasNonEmptyParam(kwargs));
+            this.dustbin.subscribe(listener);
             listeners[key] = listener;
         }
         return listeners;
@@ -102,7 +96,7 @@ class TestCase {
         return this.dustbin.runCommands(this.commands).catch(err=>{
             console.log(err);
             self.success = false;
-        }).then(()=>{return self._finish()});
+        }).then(()=>self._finish());
     }
 }
 

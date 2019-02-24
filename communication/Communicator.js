@@ -29,21 +29,10 @@ const sessionPath = sessionClient.sessionPath(_PROJECT_ID, _SESSION_ID);
 // NEW:         pcm.{cardname} cards.pcm.default
 // """
 
-class SpeakListener extends EventListener {
-  callback(kwargs) {
-    if (!kwargs.response) {
-      return null;
-    }
-    return this.container.speak(kwargs);
-  }
-}
-
-
 class Communicator {
   constructor(audio_timeout, dustbin) {
     this.DUSTBIN = dustbin;
-    this.speakListener = new SpeakListener(this);
-    this.DUSTBIN.subscribe(Events.SPEAK, this.speakListener)
+    this.DUSTBIN.subscribe(new EventListener(Events.SPEAK, (kwargs)=>this.speak(kwargs)));
     // this.speaker = SpeechEngine(dustbin.log, dustbin.hasInternet)
     // this.audioHandler = AudioHandler(audio_timeout)
   }
@@ -54,7 +43,7 @@ class Communicator {
    */
   speak(kwargs) {
     if (!this.DUSTBIN.silent) {
-      self.speaker.say(kwargs.message);
+      this.speaker.say(kwargs.message);
     }
     this.DUSTBIN.log(kwargs.message);
   }
@@ -122,10 +111,10 @@ class Communicator {
       // IDENTIFY
       case 'identify.person':
         // TODO make sure we don't trigger until person parameter is resolved (conversation may occur on dialogflow's side)
-        this.DUSTBIN.trigger(Events.REQ_IDENTIFY_PERSON, this.toArgs(result.parameters));
+        this.DUSTBIN.trigger(Events.REQ_IDENTIFY_PERSON, {request: "identify", what: "person"});
         break;
       case 'identify.object':
-        this.DUSTBIN.trigger(Events.REQ_IDENTIFY_OBJECT, this.toArgs(result.parameters).object);
+        this.DUSTBIN.trigger(Events.REQ_IDENTIFY_OBJECT, {request: "identify", what: "object"});
         break;
 
       // FIND
@@ -133,7 +122,7 @@ class Communicator {
         this.DUSTBIN.trigger(Events.REQ_FIND_PERSON, this.toArgs(result.parameters));
         break;
       case 'find.object':
-        this.DUSTBIN.trigger(Events.REQ_FIND_OBJECT, this.toArgs(result.parameters).object);
+        this.DUSTBIN.trigger(Events.REQ_FIND_OBJECT, this.toArgs(result.parameters));
         break;
 
       // GO
@@ -234,6 +223,5 @@ class Communicator {
 }
 
 module.exports = {
-  SpeakListener,
   Communicator
 }

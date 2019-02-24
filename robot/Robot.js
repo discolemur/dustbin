@@ -36,51 +36,26 @@ class Robot {
     }
   }
   setListeners(Events) {
-    class WiggleListener extends EventListener {
-      callback() {
-        return this.container.wiggle();
-      }
-    }
-    class SpinListener extends EventListener {
-      callback(kwargs) {
-        return this.container.spin(kwargs.dps, kwargs.times, kwargs.reversed);
-      }
-    }
-    class FigureEightListener extends EventListener {
-      callback() {
-        return this.container.figureEight();
-      }
-    }
-    class FindListener extends EventListener {
-      callback() {
-        // this.DUSTBIN.trigger(Events.ROBOT_MOVED);
-      }
-    }
-    class FollowListener extends EventListener {
-      callback() {
-        // this.DUSTBIN.trigger(Events.ROBOT_FOLLOWING);
-      }
-    }
-    class WaitListener extends EventListener {
-      callback() {
-        // this.DUSTBIN.trigger(Events.ROBOT_WAITING);
-      }
-    }
-    this.wiggleListener = new WiggleListener(this);
-    this.figureEightListener = new FigureEightListener(this);
-    this.spinListener = new SpinListener(this);
-    this.findListener = new FindListener(this);
-    this.followListener = new FollowListener(this);
-    this.waitListener = new WaitListener(this);
-    // ### Placeholders ###
-    this.DUSTBIN.subscribe(Events.REQ_FIND_OBJECT, this.findListener);
-    this.DUSTBIN.subscribe(Events.REQ_FIND_PERSON, this.findListener);
-    this.DUSTBIN.subscribe(Events.REQ_FOLLOW, this.followListener);
-    this.DUSTBIN.subscribe(Events.GO_WAIT, this.waitListener);
+    this.DUSTBIN.subscribe(new EventListener(Events.REQ_FIND_OBJECT, (kwargs)=>this.find(kwargs)));
+    this.DUSTBIN.subscribe(new EventListener(Events.REQ_FIND_PERSON, (kwargs)=>this.find(kwargs)));
+    this.DUSTBIN.subscribe(new EventListener(Events.REQ_FOLLOW, (kwargs)=>this.follow(kwargs)));
+    this.DUSTBIN.subscribe(new EventListener(Events.GO_WAIT, (kwargs)=>this.wait(kwargs)));
     // ### Finished ###
-    this.DUSTBIN.subscribe(Events.REQ_WIGGLE, this.wiggleListener);
-    this.DUSTBIN.subscribe(Events.REQ_SPIN, this.spinListener);
-    this.DUSTBIN.subscribe(Events.REQ_FIGURE_EIGHT, this.figureEightListener);
+    this.DUSTBIN.subscribe(new EventListener(Events.REQ_WIGGLE, (kwargs)=>this.wiggle(kwargs)));
+    this.DUSTBIN.subscribe(new EventListener(Events.REQ_FIGURE_EIGHT, (kwargs)=>this.figureEight(kwargs)));
+    this.DUSTBIN.subscribe(new EventListener(Events.REQ_SPIN, (kwargs)=>this.spin(kwargs.dps, kwargs.times, kwargs.reversed)));
+  }
+  find() {
+    // TODO
+    // this.DUSTBIN.trigger(Events.ROBOT_MOVED);
+  }
+  follow() {
+    // TODO
+    // this.DUSTBIN.trigger(Events.ROBOT_FOLLOWING);
+  }
+  wait() {
+    // TODO
+    // this.DUSTBIN.trigger(Events.ROBOT_WAITING);
   }
   wiggle() {
     if (this.roomba == null) {return;}
