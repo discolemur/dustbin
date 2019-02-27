@@ -1,7 +1,7 @@
 'use strict';
 
 const { Events, EventListener, MyEventEmitter } = require('./communication/Events.js');
-const Communicator = require('./communication/Communicator.js').Communicator;
+const AudioCommunicator = require('./communication/AudioCommunicator.js').AudioCommunicator;
 const ShortTermMemory = require('./memory/ShortTermMemory.js').ShortTermMemory;
 const Robot = require(`${__dirname}/robot/Robot.js`);
 const Vision = require(`${__dirname}/machine_learning/Vision.js`).Vision;
@@ -34,7 +34,7 @@ class Dustbin {
     this.switchboard = new MyEventEmitter();
     try {
       // # Then need a communicator
-      this.com = new Communicator(audio_timeout, this);
+      this.com = new AudioCommunicator(audio_timeout, this);
       // # Then short term memory
       this.memory = new ShortTermMemory(this);
       // # Finally can add a robot
@@ -135,13 +135,13 @@ class Dustbin {
     }
   }
   /**
-   * 
+   * Returns MyEventEmitter.emit (which is a Promise.all for all listeners triggered)
    * @param {*} event Integer for the event to trigger.
    * @param {*} kwargs Arguments to pass to all listeners for this event.
    */
   trigger(event, kwargs = {}) {
     kwargs.event = event;
-    this.switchboard.emit(event, kwargs);
+    return this.switchboard.emit(event, kwargs);
   }
   /**
    * Rather than running persistently, the dustbin will run a list of commands in sequence. This is primarily for testing purposes.

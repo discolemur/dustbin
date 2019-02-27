@@ -13,6 +13,8 @@ const assert = require('chai').assert;
 //   4) assert events fire correctly.
 
 console.log("NOTE: DON'T FORGET TO RUN MOSQUITTO AND faceRecognizer.py !!!!!!!!!!!!!!")
+// TODO: make sure we wait long enough to get a response from the Dustbin.
+// TODO: Don't let the dustbin die if it's still waiting for an MQTT response.
 
 describe("Basic commands", () => {
   describe("Hello, Goodbye.", () => {

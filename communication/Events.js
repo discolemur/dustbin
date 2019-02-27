@@ -146,7 +146,7 @@ class MyEventEmitter {
   }
   emit(event, kwargs = null) {
     if (this.callbacks[event] === undefined) {
-      return;
+      return Promise.resolve();
     }
     return Promise.all(this.callbacks[event].map(x => x.runCallback(kwargs)));
   }

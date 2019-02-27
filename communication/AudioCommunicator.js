@@ -29,10 +29,10 @@ const sessionPath = sessionClient.sessionPath(_PROJECT_ID, _SESSION_ID);
 // NEW:         pcm.{cardname} cards.pcm.default
 // """
 
-class Communicator {
+class AudioCommunicator {
   constructor(audio_timeout, dustbin) {
     this.DUSTBIN = dustbin;
-    this.DUSTBIN.subscribe(new EventListener(Events.SPEAK, (kwargs)=>this.speak(kwargs)));
+    this.DUSTBIN.subscribe(new EventListener(Events.SPEAK, (kwargs) => this.speak(kwargs)));
     // this.speaker = SpeechEngine(dustbin.log, dustbin.hasInternet)
     // this.audioHandler = AudioHandler(audio_timeout)
   }
@@ -71,80 +71,86 @@ class Communicator {
     return args;
   }
 
+  /**
+   * 
+   * @param {*} result The dialogflow result
+   */
   _handleAction(result) {
     const action = result.action;
     const response_msg = result.fulfillmentText;
     const query_msg = result.queryText;
+    let triggers = [];
     if (response_msg.length > 0)
-      this.DUSTBIN.trigger(Events.SPEAK, { query: query_msg, message: response_msg, action: action })
+      triggers.push(this.DUSTBIN.trigger(Events.SPEAK, { query: query_msg, message: response_msg, action: action }));
 
     if (action == 'input.unknown') {
-      this.DUSTBIN.trigger(Events.NOT_UNDERSTAND_MSG, { query: query_msg, response: response_msg, action: action })
+      triggers.push(this.DUSTBIN.trigger(Events.NOT_UNDERSTAND_MSG, { query: query_msg, response: response_msg, action: action }));
       return;
     }
-    this.DUSTBIN.trigger(Events.UNDERSTAND_MSG, { query: query_msg, response: response_msg, action: action })
+    triggers.push(this.DUSTBIN.trigger(Events.UNDERSTAND_MSG, { query: query_msg, response: response_msg, action: action }));
     switch (action) {
       case 'system.shutdown':
-        this.DUSTBIN.trigger(Events.REQ_SHUTDOWN)
+        triggers.push(this.DUSTBIN.trigger(Events.REQ_SHUTDOWN));
         break;
 
       // VOICE and LANGUAGE COMMUNICATION
       case 'introduction':
-        this.DUSTBIN.trigger(Events.INTRODUCE_ROBOT)
+        triggers.push(this.DUSTBIN.trigger(Events.INTRODUCE_ROBOT));
         break;
       case 'say.hello':
-        this.DUSTBIN.trigger(Events.GREETINGS);
+        triggers.push(this.DUSTBIN.trigger(Events.GREETINGS));
         break;
       case 'say.no':
-        this.DUSTBIN.trigger(Events.RESPONSE_NO)
+        triggers.push(this.DUSTBIN.trigger(Events.RESPONSE_NO));
         break;
       case 'say.yes':
-        this.DUSTBIN.trigger(Events.RESPONSE_YES)
+        triggers.push(this.DUSTBIN.trigger(Events.RESPONSE_YES));
         break;
       case 'heard.yes':
-        this.DUSTBIN.trigger(Events.HEARD_YES)
+        triggers.push(this.DUSTBIN.trigger(Events.HEARD_YES));
         break;
       case 'heard.no':
-        this.DUSTBIN.trigger(Events.HEARD_NO)
+        triggers.push(this.DUSTBIN.trigger(Events.HEARD_NO));
         break;
 
       // IDENTIFY
       case 'identify.person':
         // TODO make sure we don't trigger until person parameter is resolved (conversation may occur on dialogflow's side)
-        this.DUSTBIN.trigger(Events.REQ_IDENTIFY_PERSON, {request: "identify", what: "person"});
+        triggers.push(this.DUSTBIN.trigger(Events.REQ_IDENTIFY_PERSON, { request: "identify", what: "person" }));
         break;
       case 'identify.object':
-        this.DUSTBIN.trigger(Events.REQ_IDENTIFY_OBJECT, {request: "identify", what: "object"});
+        triggers.push(this.DUSTBIN.trigger(Events.REQ_IDENTIFY_OBJECT, { request: "identify", what: "object" }));
         break;
 
       // FIND
       case 'find.person':
-        this.DUSTBIN.trigger(Events.REQ_FIND_PERSON, this.toArgs(result.parameters));
+        triggers.push(this.DUSTBIN.trigger(Events.REQ_FIND_PERSON, this.toArgs(result.parameters)))
         break;
       case 'find.object':
-        this.DUSTBIN.trigger(Events.REQ_FIND_OBJECT, this.toArgs(result.parameters));
+        triggers.push(this.DUSTBIN.trigger(Events.REQ_FIND_OBJECT, this.toArgs(result.parameters)));
         break;
 
       // GO
       case 'go.follow':
-        this.DUSTBIN.trigger(Events.REQ_FOLLOW, this.toArgs(result.parameters))
+        triggers.push(this.DUSTBIN.trigger(Events.REQ_FOLLOW, this.toArgs(result.parameters)));
         break;
       case 'go.wait':
         let waitParams = this.toArgs(result.parameters);
-        this.DUSTBIN.trigger(Events.GO_WAIT, { obj: waitParams.object, preposition: waitParams.preposition });
+        triggers.push(this.DUSTBIN.trigger(Events.GO_WAIT, { obj: waitParams.object, preposition: waitParams.preposition }));
         break;
 
       // MOVEMENT TRICKS
       case 'do.figure_eight':
-        this.DUSTBIN.trigger(Events.REQ_FIGURE_EIGHT)
+        triggers.push(this.DUSTBIN.trigger(Events.REQ_FIGURE_EIGHT));
         break;
       case 'do.spin':
-        this.DUSTBIN.trigger(Events.REQ_SPIN, { dps: 80, times: 1, reversed: true })
+        triggers.push(this.DUSTBIN.trigger(Events.REQ_SPIN, { dps: 80, times: 1, reversed: true }));
         break;
       case 'do.wiggle':
-        this.DUSTBIN.trigger(Events.REQ_WIGGLE)
+        triggers.push(this.DUSTBIN.trigger(Events.REQ_WIGGLE));
         break;
     }
+    return Promise.all(triggers);
   }
 
   /**
@@ -153,17 +159,50 @@ class Communicator {
    */
   interpretText(query) {
     let self = this;
-    return new Promise(function (resolve, reject) {
-      const request = {
+    const request = {
+      session: sessionPath,
+      queryInput: {
+        text: {
+          text: query,
+          languageCode: _LANGUAGE_CODE
+        }
+      }
+    };
+    return sessionClient
+      .detectIntent(request)
+      .then(responses => {
+        const result = responses[0].queryResult;
+        // if (result.intent)
+        // console.log(`  Intent: ${result.intent.displayName}`);
+        self.DUSTBIN.log(`Query text: ${result.queryText}\n`);
+        self.DUSTBIN.log(`Fulfillment text: ${result.fulfillmentText}\n`);
+        self.DUSTBIN.trigger(Events.INTERPRETED_TEXT);
+        return self._handleAction(result);
+      })
+      .catch(err => {
+        self.DUSTBIN.log('FAILED TO INTERPRET FROM TEXT AND HANDLE IT!', err);
+        throw err;
+      });
+  }
+  interpretFromWavFile(filename) {
+    let self = this;
+    const readFile = util.promisify(fs.readFile);
+    return readFile(filename).then(inputAudio => {
+      const audioEncoding = 'AUDIO_ENCODING_LINEAR_16';
+      const sampleRateHertz = 16000;
+      return {
         session: sessionPath,
         queryInput: {
-          text: {
-            text: query,
-            languageCode: _LANGUAGE_CODE,
-          },
+          audioConfig: {
+            audioEncoding: audioEncoding,
+            sampleRateHertz: sampleRateHertz,
+            languageCode: _LANGUAGE_CODE
+          }
         },
-      };
-      sessionClient
+        inputAudio: inputAudio
+      }
+    }).then(request => {
+      return sessionClient
         .detectIntent(request)
         .then(responses => {
           const result = responses[0].queryResult;
@@ -171,49 +210,13 @@ class Communicator {
           // console.log(`  Intent: ${result.intent.displayName}`);
           self.DUSTBIN.log(`Query text: ${result.queryText}\n`);
           self.DUSTBIN.log(`Fulfillment text: ${result.fulfillmentText}\n`);
-          self.DUSTBIN.trigger(Events.INTERPRETED_TEXT);
-          resolve(self._handleAction(result));
+          self.DUSTBIN.trigger(Events.INTERPRETED_AUDIO)
+          return self._handleAction(result);
         })
-        .catch(err => {
-          self.DUSTBIN.log('FAILED TO INTERPRET FROM TEXT AND HANDLE IT!', err);
-          reject(err);
-        });
-    })
-  }
-  interpretFromWavFile(filename) {
-    let self = this;
-    return new Promise(function (resolve, reject) {
-      const readFile = util.promisify(fs.readFile);
-      readFile(filename).then(inputAudio => {
-        const audioEncoding = 'AUDIO_ENCODING_LINEAR_16';
-        const sampleRateHertz = 16000;
-        const request = {
-          session: sessionPath,
-          queryInput: {
-            audioConfig: {
-              audioEncoding: audioEncoding,
-              sampleRateHertz: sampleRateHertz,
-              languageCode: _LANGUAGE_CODE,
-            },
-          },
-          inputAudio: inputAudio
-        };
-        sessionClient
-          .detectIntent(request)
-          .then(responses => {
-            const result = responses[0].queryResult;
-            // if (result.intent)
-            // console.log(`  Intent: ${result.intent.displayName}`);
-            self.DUSTBIN.log(`Query text: ${result.queryText}\n`);
-            self.DUSTBIN.log(`Fulfillment text: ${result.fulfillmentText}\n`);
-            self.DUSTBIN.trigger(Events.INTERPRETED_AUDIO)
-            resolve(self._handleAction(result));
-          })
-      }).catch(err => {
-          self.DUSTBIN.log('FAILED TO INTERPRET FROM TEXT AND HANDLE IT!', err);
-          reject(err);
-        });
-    })
+    }).catch(err => {
+      self.DUSTBIN.log('FAILED TO INTERPRET FROM TEXT AND HANDLE IT!', err);
+      throw err;
+    });
   }
 
   interpretAudio() {
@@ -223,5 +226,5 @@ class Communicator {
 }
 
 module.exports = {
-  Communicator
+  AudioCommunicator
 }
