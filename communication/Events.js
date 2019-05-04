@@ -4,18 +4,9 @@ Events Class
 Defines global variables representing which events can trigger callbacks.
 */
 
-const config = require(`${__dirname}/../config.json`);
-var mqtt = require('mqtt')
+const SocketCom = require('./SocketCom');
 
 // TODO fill in the vision communication code and appropriately handle communications.
-// Use mosquitto as a localhost mqtt server
-// To test mosquitto, use these commands in separate terminals:
-/*
-    # Set up reporter
-    mosquitto_sub -h test.mosquitto.org -t "hello/world" -v
-    # Broadcast a message (reporter should receive it)
-    mosquitto_pub -h test.mosquitto.org -t "hello/world" -m "Who's there"
-*/
 
 const uuid = require('uuid');
 /**
@@ -94,41 +85,31 @@ for (let event of Object.keys(Events)) {
 class MyEventEmitter {
   constructor() {
     this.callbacks = {};
-    this.setupMQTT();
-    this.subscribe(new EventListener(Events.REQ_FIND_OBJECT, (kwargs)=>this.publishVisionMQTT({find : kwargs.object})))
-    this.subscribe(new EventListener(Events.REQ_IDENTIFY_OBJECT, (kwargs)=>this.publishVisionMQTT(kwargs)));
-    this.subscribe(new EventListener(Events.REQ_FIND_PERSON, (kwargs)=>this.publishVisionMQTT({find : kwargs.person})));
-    this.subscribe(new EventListener(Events.REQ_IDENTIFY_PERSON, (kwargs)=>this.publishVisionMQTT(kwargs)));
+    this.socketCommunicator = SocketCom();
+    this.socketCommunicator.setResponseHandler(this.handleVisionResponse);
+    const self = this;
+    this.socketCommunicator.ready().then(()=>{
+      self.subscribe(new EventListener(Events.REQ_FIND_OBJECT, (kwargs)=>self.sendVisionRequest({find : kwargs.object})))
+      self.subscribe(new EventListener(Events.REQ_IDENTIFY_OBJECT, (kwargs)=>self.sendVisionRequest(kwargs)));
+      self.subscribe(new EventListener(Events.REQ_FIND_PERSON, (kwargs)=>self.sendVisionRequest({find : kwargs.person})));
+      self.subscribe(new EventListener(Events.REQ_IDENTIFY_PERSON, (kwargs)=>self.sendVisionRequest(kwargs)));
+    })
   }
   done(testing=false) {
     if (!testing) {
-      this.publishVisionMQTT({request : "die"})
+      this.sendVisionRequest({request : "die"})
     }
-    this.client.end()
   }
-  setupMQTT() {
-    this.client = mqtt.connect(`mqtt://${config.mqtt_host}:${config.mqtt_port}`);
-    let self = this;
-    this.client.on('connect', function () {
-      self.client.subscribe(config.mqtt_vision_response, function (err) {
-        if (err) {
-          throw new Error(`Failed to subscribe to ${config.mqtt_vision_response}`)
-        }
-      });
-    })
-    this.client.on('message', this.handleMQTTMessage)
-  }
-  handleMQTTMessage(topic, message) {
-    console.log(`Received message on ${topic}.`);
-    const msg = JSON.parse(message.toString());
+  handleVisionResponse(msg) {
     this.emit(Events.VISION_RESPONSE_RECEIVED, msg)
   }
-  publishVisionMQTT(jsonMsg) {
-    if (!this.client.connected) {
-      throw new Error("Cannot send a message if MQTT is not ready!");
-    }
-    this.client.publish(config.mqtt_vision_request, JSON.stringify(jsonMsg));
-    // TODO wait for response
+  sendVisionRequest(jsonMsg, requireResponse=false) {
+    //request('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY', { json: true }, (err, res, body) => {
+    //  if (err) { return console.log(err); }
+    //  console.log(body.url);
+    //  console.log(body.explanation);
+    //});
+    this.socketCommunicator.send(JSON.stringify(jsonMsg), requireResponse);
   }
   /**
    * Subscribes a listener.

@@ -16,6 +16,8 @@ console.log("NOTE: DON'T FORGET TO RUN MOSQUITTO AND faceRecognizer.py !!!!!!!!!
 // TODO: make sure we wait long enough to get a response from the Dustbin.
 // TODO: Don't let the dustbin die if it's still waiting for an MQTT response.
 
+// TODO: Make sure "done" is called after test case is completed.
+
 describe("Basic commands", () => {
   describe("Hello, Goodbye.", () => {
     it("should say hi.", () => {
@@ -82,7 +84,7 @@ describe("Basic commands", () => {
           console.log(`Finished ${title}`)
         });
     })
-    it('Identify object', () => {
+    it.only('Identify object', () => {
       const title = 'Test identify object';
       return new TestCase(title)
         .addCommand(Commands.identifyObjectCommand)

@@ -49,7 +49,6 @@ class Dustbin {
     } catch (e) {
       console.log('FATAL ERROR OCCURRED DURING SETUP!', e);
       this.done();
-      process.exit(1);
     }
   }
   /**
@@ -80,20 +79,24 @@ class Dustbin {
   subscribe(listener) {
     return this.switchboard.subscribe(listener);
   }
+  
   /**
+   * Returns a Promise.
    * This tells the Dustbin that it's time to stop.
    */
-  done() {
+  async done() {
     if (this.ended) { return; }
     this.keepGoing = false;
-    if (this.robot)
-      this.robot.end();
-    if (this.switchboard) {
-      this.switchboard.done(this.testing);
+    const self = this;
+    if (self.robot)
+      self.robot.end();
+    if (self.switchboard) {
+      self.switchboard.done(self.testing);
     }
-    this.log('-------------------DUSTBIN   ENDS-------------------');
-    this.logger.end();
-    this.ended = true;
+    self.log('-------------------DUSTBIN   ENDS-------------------');
+    self.logger.end();
+    self.ended = true;
+    process.exit(0);
   }
   /**
    * Tests whether or not internet is connected, as long as it has been enough time since last checked.
@@ -130,8 +133,7 @@ class Dustbin {
     catch (e) {
       this.log('Dustbin process had fatal error.', e);
       console.log('Dustbin process had fatal error.', e);
-      this.done();
-      process.exit(1);
+      return this.done();
     }
   }
   /**

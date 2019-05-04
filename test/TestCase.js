@@ -65,7 +65,7 @@ class TestCase {
         return this;
     }
 
-    _finish() {
+    async _finish() {
         if (this.success) {
             try {
                 this.assertCalled(this.listeners);
@@ -75,8 +75,10 @@ class TestCase {
                 this.success = false;
             }
         }
-        this.dustbin.done();
-        return {success: this.success, message: this.message};
+        const self = this;
+        return this.dustbin.done().then(()=>{
+            return {success: self.success, message: self.message};
+        })
     }
 
     subscribeListeners() {
