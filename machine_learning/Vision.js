@@ -4,6 +4,7 @@ const { Events, EventListener } = require('../communication/Events.js');
 
 class Vision {
   constructor(dustbin) {
+    this._handleVisionResponse = this._handleVisionResponse.bind(this);
     this.DUSTBIN = dustbin;
     this._subscribeListeners();
   }

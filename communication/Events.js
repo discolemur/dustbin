@@ -20,17 +20,20 @@ class EventListener {
     this._hash = uuid();
     this.event = _event;
     this.callCount = 0;
-    this.callback = _callback;
+    // Every callback needs to be wrapped in a promise so that we can use Promise.all() when events are triggered.
+    this.callback = (kwargs)=>{
+      return Promise.resolve().then(()=>{
+        return _callback(kwargs)
+      })
+    };
   }
   getHash() {
     return this._hash;
   }
   callback(kwargs) { }
-  async runCallback(kwargs) {
+  runCallback(kwargs) {
     this.callCount++;
-    let self = this;
-    await Promise.resolve();
-    return self.callback(kwargs);
+    return this.callback(kwargs);
   }
 }
 
@@ -84,32 +87,20 @@ for (let event of Object.keys(Events)) {
  */
 class MyEventEmitter {
   constructor() {
+    this.handleVisionResponse = this.handleVisionResponse.bind(this);
     this.callbacks = {};
-    this.socketCommunicator = SocketCom();
+    this.socketCommunicator = new SocketCom();
     this.socketCommunicator.setResponseHandler(this.handleVisionResponse);
-    const self = this;
-    this.socketCommunicator.ready().then(()=>{
-      self.subscribe(new EventListener(Events.REQ_FIND_OBJECT, (kwargs)=>self.sendVisionRequest({find : kwargs.object})))
-      self.subscribe(new EventListener(Events.REQ_IDENTIFY_OBJECT, (kwargs)=>self.sendVisionRequest(kwargs)));
-      self.subscribe(new EventListener(Events.REQ_FIND_PERSON, (kwargs)=>self.sendVisionRequest({find : kwargs.person})));
-      self.subscribe(new EventListener(Events.REQ_IDENTIFY_PERSON, (kwargs)=>self.sendVisionRequest(kwargs)));
-    })
-  }
-  done(testing=false) {
-    if (!testing) {
-      this.sendVisionRequest({request : "die"})
-    }
+    this.subscribe(new EventListener(Events.REQ_FIND_OBJECT, (kwargs)=>this.sendVisionRequest({find : kwargs.object})))
+    this.subscribe(new EventListener(Events.REQ_IDENTIFY_OBJECT, (kwargs)=>this.sendVisionRequest(kwargs)));
+    this.subscribe(new EventListener(Events.REQ_FIND_PERSON, (kwargs)=>this.sendVisionRequest({find : kwargs.person})));
+    this.subscribe(new EventListener(Events.REQ_IDENTIFY_PERSON, (kwargs)=>this.sendVisionRequest(kwargs)));
   }
   handleVisionResponse(msg) {
-    this.emit(Events.VISION_RESPONSE_RECEIVED, msg)
+    return this.emit(Events.VISION_RESPONSE_RECEIVED, msg)
   }
-  sendVisionRequest(jsonMsg, requireResponse=false) {
-    //request('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY', { json: true }, (err, res, body) => {
-    //  if (err) { return console.log(err); }
-    //  console.log(body.url);
-    //  console.log(body.explanation);
-    //});
-    this.socketCommunicator.send(JSON.stringify(jsonMsg), requireResponse);
+  sendVisionRequest(jsonMsg) {
+    return this.socketCommunicator.send(jsonMsg);
   }
   /**
    * Subscribes a listener.

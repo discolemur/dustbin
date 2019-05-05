@@ -84,19 +84,19 @@ class Dustbin {
    * Returns a Promise.
    * This tells the Dustbin that it's time to stop.
    */
-  async done() {
+  done(testing=false) {
     if (this.ended) { return; }
     this.keepGoing = false;
     const self = this;
     if (self.robot)
       self.robot.end();
-    if (self.switchboard) {
-      self.switchboard.done(self.testing);
-    }
     self.log('-------------------DUSTBIN   ENDS-------------------');
     self.logger.end();
     self.ended = true;
-    process.exit(0);
+    if (!testing) {
+      process.exit(0);
+    }
+    return Promise.resolve();
   }
   /**
    * Tests whether or not internet is connected, as long as it has been enough time since last checked.

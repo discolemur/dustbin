@@ -13,7 +13,6 @@ function incrementEventCount(testCase, event) {
     return testCase;
 }
 
-let a = [];
 const Commands = {
     checkHearingCommand : (testCase) => {
         testCase.commands.push('test/canYouHearMe.wav');
@@ -46,6 +45,7 @@ const Commands = {
         testCase = incrementEventCount(testCase, Events.VISION_RESPONSE_RECEIVED);
         testCase = incrementEventCount(testCase, Events.SPEAK);
         testCase = incrementEventCount(testCase, Events.OBJECT_FOUND);
+        testCase = incrementEventCount(testCase, Events.SPEAK);
         return testCase;
     },
     findPersonCommand : (testCase) => {
@@ -56,6 +56,7 @@ const Commands = {
         testCase = incrementEventCount(testCase, Events.VISION_RESPONSE_RECEIVED);
         testCase = incrementEventCount(testCase, Events.SPEAK);
         testCase = incrementEventCount(testCase, Events.PERSON_FOUND);
+        testCase = incrementEventCount(testCase, Events.SPEAK);
         return testCase;
     },
     followMeCommand : (testCase) => {
@@ -75,6 +76,7 @@ const Commands = {
         testCase = incrementEventCount(testCase, Events.VISION_RESPONSE_RECEIVED);
         testCase = incrementEventCount(testCase, Events.SPEAK);
         testCase = incrementEventCount(testCase, Events.PERSON_IDENTIFIED);
+        testCase = incrementEventCount(testCase, Events.SPEAK);
         return testCase;
     },
     identifyObjectCommand : (testCase) => {
@@ -85,6 +87,7 @@ const Commands = {
         testCase = incrementEventCount(testCase, Events.VISION_RESPONSE_RECEIVED);
         testCase = incrementEventCount(testCase, Events.SPEAK);
         testCase = incrementEventCount(testCase, Events.OBJECT_IDENTIFIED);
+        testCase = incrementEventCount(testCase, Events.SPEAK);
         return testCase;
     },
     introductionCommand : (testCase) => {
