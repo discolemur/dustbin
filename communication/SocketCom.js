@@ -41,7 +41,6 @@ class SocketCom {
         return self.handleResponse(res);
       })
       .catch(function (err) {
-        // What else to do?
         return self.handleResponse(err);
       });
   }

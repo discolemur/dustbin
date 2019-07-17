@@ -6,8 +6,6 @@ Defines global variables representing which events can trigger callbacks.
 
 const SocketCom = require('./SocketCom');
 
-// TODO fill in the vision communication code and appropriately handle communications.
-
 const uuid = require('uuid');
 /**
  * The EventListener class holds an ID and a callback. It also keeps track of how many times it has been called (for testing purposes).
@@ -72,8 +70,10 @@ const Events = {
   ROBOT_FOLLOWING: 30,
   ROBOT_WAITING: 31,
   VISION_RESPONSE_RECEIVED: 32,
+  VISION_COMMUNICATION_FAILED: 33,
+  VISION_REQ_SENT: 34,
 
-  _NEXT_KEY: 33
+  _NEXT_KEY: 35
 };
 
 let EventsByNumber = {};
@@ -97,10 +97,15 @@ class MyEventEmitter {
     this.subscribe(new EventListener(Events.REQ_IDENTIFY_PERSON, (kwargs)=>this.sendVisionRequest(kwargs)));
   }
   handleVisionResponse(msg) {
-    return this.emit(Events.VISION_RESPONSE_RECEIVED, msg)
+    if (msg.name == 'RequestError') {
+      return this.emit(Events.VISION_COMMUNICATION_FAILED, msg).then(
+        ()=>this.emit(Events.SPEAK, { message: 'My eyes are not working.' })
+      );
+    }
+    return this.emit(Events.VISION_RESPONSE_RECEIVED, msg);
   }
   sendVisionRequest(jsonMsg) {
-    return this.socketCommunicator.send(jsonMsg);
+    return this.emit(Events.VISION_REQ_SENT).then(()=>this.socketCommunicator.send(jsonMsg));
   }
   /**
    * Subscribes a listener.

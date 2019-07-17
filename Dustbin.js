@@ -32,6 +32,7 @@ class Dustbin {
     this._REFRESH_RATE = 60;
     this.silent = silent;
     this.switchboard = new MyEventEmitter();
+    this.outstanding_http_requests = 0;
     try {
       // # Then need a communicator
       this.com = new AudioCommunicator(audio_timeout, this);
@@ -39,11 +40,16 @@ class Dustbin {
       this.memory = new ShortTermMemory(this);
       // # Finally can add a robot
       this.robot = new Robot(this);
-      // this.robotThread = Thread(target = this.robot.run);
-      // this.robotThread.start();
       this.vision = new Vision(this);
-      // this.visionThread = Thread(target = this.vision.run);
-      // this.visionThread.start();
+      this.subscribe(new EventListener(Events.VISION_COMMUNICATION_FAILED, ()=>{
+        this.outstanding_http_requests--;
+      }))
+      this.subscribe(new EventListener(Events.VISION_RESPONSE_RECEIVED, ()=>{
+        this.outstanding_http_requests--;
+      }))
+      this.subscribe(new EventListener(Events.VISION_REQ_SENT, ()=>{
+        this.outstanding_http_requests++;
+      }))
       // # End by subscribing to shutdown
       this.subscribe(new EventListener(Events.REQ_SHUTDOWN, (kwargs)=>this.done(kwargs)));
     } catch (e) {
@@ -85,6 +91,9 @@ class Dustbin {
    * This tells the Dustbin that it's time to stop.
    */
   done(testing=false) {
+    if (this.outstanding_http_requests > 0) {
+      throw Error('You cannot end the dustbin when it\'s still waiting for a response from Vision!')
+    }
     if (this.ended) { return; }
     this.keepGoing = false;
     const self = this;

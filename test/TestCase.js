@@ -23,6 +23,7 @@ class TestCase {
     this.success = true;
     this.message = this.title;
     this.dustbin = new Dustbin(TEST_LOGGER, AUDIO_TIMEOUT, SILENT, true);
+    this.timeout = 10000;
   }
 
   assertCalled(listeners) {
@@ -95,10 +96,17 @@ class TestCase {
     console.log(`${'='.repeat(20)}> Test step: ${this.title}`);
     this.listeners = this.subscribeListeners();
     let self = this;
+    const start = Date.now();
     return this.dustbin.runCommands(this.commands).catch(err=>{
       console.log(err);
       self.success = false;
     }).then(()=>{
+      // Wait for http requests to finish, or timeout.
+      while (Date.now() - start < self.timeout) {
+        if (self.dustbin.outstanding_http_requests <= 0) {
+          return self._finish();
+        }
+      }
       return self._finish();
     });
   }
