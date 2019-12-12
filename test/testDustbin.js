@@ -12,9 +12,6 @@ const assert = require('chai').assert;
 //   3) feed it a series of text commands,
 //   4) assert events fire correctly.
 
-// TODO: make sure we wait long enough to get a response from the Dustbin.
-// TODO: Don't let the dustbin die if it's still waiting for an MQTT response.
-
 describe("Basic commands", function() {
   this.timeout(30000); // Huge timout for debugging.
   describe("Hello, Goodbye.", function() {

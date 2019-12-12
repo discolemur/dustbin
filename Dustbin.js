@@ -120,6 +120,13 @@ class Dustbin {
     }
     return this._hasInternet;
   }
+  listen() {
+    // TODO debug this, make it work...
+    this.com.interpretAudio();
+    setTimeout(() => {
+      this.listen();
+    }, 500);
+  }
   /**
    * Persistent Dustbin run loop. Checks for internet if is not connected. Interprets audio, then handles response.
    */
@@ -129,13 +136,7 @@ class Dustbin {
         if (!this._hasInternet) {
           this.testInternet();
         }
-        setTimeout(() => {
-          this.com.interpretAudio().then(response => {
-            // TODO is this even necessary, or do we handle it in interpret audio instead?
-          })
-          this.log('Listening process continues.');
-          // TODO is the timeout necessary if we are already waiting while getting audio?
-        }, 500);
+        this.listen();
       }
       this.done();
     }

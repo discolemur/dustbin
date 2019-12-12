@@ -20,8 +20,6 @@ class SocketCom {
    * @param {*} jsonMsg Must contain keys {request: '', what: ''}
    */
   send(jsonMsg) {
-    // TODO require response may mean make it a syncronous blocking call.
-    // TODO use correct args.
     const self = this;
     let referer = `/${jsonMsg.request}/${jsonMsg.what}`
     const URI = `http://${config.http_host}:${config.http_port}/${referer}`;

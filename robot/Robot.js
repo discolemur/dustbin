@@ -1,6 +1,11 @@
 'use strict';
 
+// Options:
+// https://www.npmjs.com/package/create2
+// https://www.npmjs.com/package/create-oi
+
 const { Events, EventListener } = require('../communication/Events.js');
+const create = require('create2');
 
 // ############  ROOMBA CONSTANTS ###########
 const ROOMBA_PORT = "/dev/ttyUSB0";
@@ -18,22 +23,51 @@ This is just a bogus class: a placeholder for future robot com classes.
 import CreateHTTP
 */
 
+// TODO: also have a feature where the robot turns to face a person when learning who the person is.
+// TODO: to learn multiple people, can maybe use a dimension reduction on the second to last output of the model, and divide the learning space by the people known.
+
 class Robot {
   constructor(dustbin) {
+    if (dustbin === null) {
+      dustbin = {
+        log: console.log,
+        subscribe: ()=>{},
+        trigger: ()=>{}
+      }
+    }
     this.DUSTBIN = dustbin;
     this.keepGoing = true;
-    try {
-      this.roomba = CreateHTTP.Create(ROOMBA_PORT, BAUD_RATE, CreateHTTP.SAFE_MODE, dustbin);
-      this.roomba.resetPose();
-      // Use this method to access location data
-      const { px, py, th } = this.roomba.getPose();
-    } catch (e) {
-      this.DUSTBIN.log('Could not connect to Roomba.');
-      this.roomba = null;
+    this.connected = false;
+    this.roomba = null;
+    let timedout = false;
+    // TODO: handle this asyncronous stuff properly.
+    setTimeout(()=>{
+      timedout = true;
+    }, 5000);
+    while (!this.connected || !timedout) {
+      this.establish_connection();
     }
     if (dustbin) {
       this.setListeners(Events);
     }
+  }
+  establish_connection() {
+    try {
+      create.ports((pa)=>{
+        const port = pa.filter(port=>port.vendorId == '0403' && port.productId == '6015');
+        create.open(port.comName, callback=(roomba)=>{
+          this.connected = true;
+          this.roomba = roomba;
+          this.roomba.safe();
+        })
+      })
+    } catch (e) {
+      if (!(e instanceof TypeError)) {
+        throw (e);
+      }
+      this.DUSTBIN.log('Error when connecting to Roomba.', e);
+    }
+    this.DUSTBIN.log('Could not connect to roomba.')
   }
   setListeners(Events) {
     this.DUSTBIN.subscribe(new EventListener(Events.REQ_FIND_OBJECT, (kwargs)=>this.find(kwargs)));
@@ -76,7 +110,7 @@ class Robot {
   }
   figureEight() {
     if (this.roomba == null) {return;}
-    // Will do a figure eightor this.toTrigger.qsize() > 0or this.toTrigger.qsize() > 0.
+    // TODO Will do a figure eightor this.toTrigger.qsize() > 0or this.toTrigger.qsize() > 0.
     this.DUSTBIN.trigger(Events.ROBOT_MOVED);
   }
   // degrees per second, number of times rotating
@@ -90,8 +124,10 @@ class Robot {
       sign = -1;
     }
     for (let i in range(times)) {
-      this.roomba.go(0, dps * sign);
-      time.sleep(times * 360 / dps);
+      setTimeout(
+        ()=>this.roomba.go(0, dps * sign),
+        times * 360 / dps
+      );
     }
     this.DUSTBIN.trigger(Events.ROBOT_MOVED);
   }
@@ -107,7 +143,7 @@ class Robot {
 
 function main() {
   // main code
-  robot = Robot(null);
+  let robot = new Robot(null);
   robot.wiggle();
   robot.spin();
   robot.figureEight();
